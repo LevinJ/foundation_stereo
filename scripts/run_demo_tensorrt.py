@@ -76,18 +76,19 @@ def inference(left_img_path: str, right_img_path: str, model, args: argparse.Nam
 
     if args.pc:
         save_path = left_img_path.split('/')[-1].split('.')[0] + '.ply'
-        baseline = 193.001/1e3
+        baseline = 0.120  # in meters
         doffs = 0
-        K = np.array([1998.842, 0, 588.364,
-                    0, 1998.842, 505.864,
-                    0,0,1]).reshape(3,3)
+        K = np.array([1049.68408203125, 0.0, 998.2841796875,
+                       0.0, 1049.68408203125, 589.4127197265625,
+                        0.0, 0.0, 1.0]).reshape(3,3)
         depth = K[0,0]*baseline/(left_disp + doffs)
         xyz_map = depth2xyzmap(depth, K)
         pcd = toOpen3dCloud(xyz_map.reshape(-1,3), input_left.reshape(-1,3))
         keep_mask = (np.asarray(pcd.points)[:,2]>0) & (np.asarray(pcd.points)[:,2]<=args.z_far)
         keep_ids = np.arange(len(np.asarray(pcd.points)))[keep_mask]
         pcd = pcd.select_by_index(keep_ids)
-        o3d.io.write_point_cloud(os.path.join(args.save_path, 'cloud', save_path), pcd)
+        # o3d.io.write_point_cloud(os.path.join(args.save_path, 'cloud', save_path), pcd)
+        o3d.visualization.draw_geometries([pcd])
 
 
 
@@ -96,8 +97,8 @@ def parse_args() -> omegaconf.OmegaConf:
     code_dir = os.path.dirname(os.path.realpath(__file__))
 
     # File options
-    parser.add_argument('--left_img', '-l', required=True, help='Path to left image.')
-    parser.add_argument('--right_img', '-r', required=True, help='Path to right image.')
+    parser.add_argument('--left_img', '-l', help='Path to left image.')
+    parser.add_argument('--right_img', '-r',  help='Path to right image.')
     parser.add_argument('--save_path', '-s', default=f'{code_dir}/../output', help='Path to save results.')
     parser.add_argument('--pretrained', default='2024-12-13-23-51-11/model_best_bp2.pth', help='Path to pretrained model')
 
@@ -112,6 +113,13 @@ def parse_args() -> omegaconf.OmegaConf:
 
 def main():
     args = parse_args()
+    args.left_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_l/00000005.png"
+    args.right_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_r/00000005.png"
+    args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_fp16.engine"
+    args.height = 288
+    args.width = 960
+    args.pc = True
+    args.z_far = 100
 
     os.makedirs(args.save_path, exist_ok=True)
     paths = ['continuous/disparity', 'visual', 'denoised_cloud', 'cloud']
