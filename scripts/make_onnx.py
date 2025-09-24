@@ -27,6 +27,11 @@ if __name__ == '__main__':
     parser.add_argument('--width', type=int, default=960)
     parser.add_argument('--valid_iters', type=int, default=16, help='number of flow-field updates during forward pass')
     args = parser.parse_args()
+
+    # args.height = (args.height // 3) 
+    # args.width = (args.width // 3) 
+    # args.valid_iters = 4
+    # logging.info(f'Input image size: {args.height}x{args.width}')
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
 
     torch.autograd.set_grad_enabled(False)
