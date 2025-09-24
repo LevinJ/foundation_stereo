@@ -30,6 +30,54 @@ from Utils import *
 from core.foundation_stereo import FoundationStereo
 from core.utils.utils import InputPadder
 
+class ZedPreprocessor(object):
+    def __init__(self):
+        self.K = np.array([
+            1049.68408203125, 0.0, 998.2841796875,
+            0.0, 1049.68408203125, 589.4127197265625,
+            0.0, 0.0, 1.0
+        ]).reshape(3, 3)
+        self.ori_input_height = 1080
+        self.ori_input_width = 1920
+        self.crop_start_height = 556
+        self.crop_end_height = 940
+        self.crop_start_width = 126
+        self.crop_end_width = 1406
+        self.img_scale = 0.75
+    def prepare(self, image_path):
+        # Load image
+        input_image = imageio.imread(image_path)
+        # Crop image using constructor attributes
+        cropped_image = input_image[
+            self.crop_start_height:self.crop_end_height,
+            self.crop_start_width:self.crop_end_width
+        ]
+        # Resize image using img_scale
+        new_height = int(cropped_image.shape[0] * self.img_scale)
+        new_width = int(cropped_image.shape[1] * self.img_scale)
+        resized_image = cv2.resize(cropped_image, (new_width, new_height))
+        # Convert to tensor and reshape as in preprocess
+        tensor_image = torch.as_tensor(resized_image.copy()).float()[None].permute(0, 3, 1, 2).contiguous()
+        return tensor_image, resized_image
+    def updated_K(self):
+        # Compute crop offsets
+        crop_h0 = self.crop_start_height
+        crop_w0 = self.crop_start_width
+        # Compute scale
+        scale = self.img_scale
+        # Copy original K
+        K = self.K.copy()
+        # Update principal point for crop
+        K[0, 2] -= crop_w0
+        K[1, 2] -= crop_h0
+        # Scale focal length and principal point
+        K[0, 0] *= scale
+        K[1, 1] *= scale
+        K[0, 2] *= scale
+        K[1, 2] *= scale
+        return K
+    
+
 def preprocess(image_path, args):
     input_image = imageio.imread(image_path)
     if args.height and args.width:
@@ -54,8 +102,11 @@ def get_engine_model(args):
 
 
 def inference(left_img_path: str, right_img_path: str, model, args: argparse.Namespace):
-    left_img, input_left = preprocess(left_img_path, args)
-    right_img, _ = preprocess(right_img_path, args)
+    # left_img, input_left = preprocess(left_img_path, args)
+    # right_img, _ = preprocess(right_img_path, args)
+    zp = ZedPreprocessor()
+    left_img, input_left = zp.prepare(left_img_path)
+    right_img, _ = zp.prepare(right_img_path)
 
     for _ in range(10):
       torch.cuda.synchronize()
@@ -70,24 +121,37 @@ def inference(left_img_path: str, right_img_path: str, model, args: argparse.Nam
 
     left_disp = left_disp.squeeze()  # HxW
 
-    vis = vis_disparity(left_disp)
-    vis = np.concatenate([input_left, vis], axis=1)
-    imageio.imwrite(os.path.join(args.save_path, 'visual', left_img_path.split('/')[-1]), vis)
+    # vis = vis_disparity(left_disp)
+    # vis = np.concatenate([input_left, vis], axis=1)
+    # imageio.imwrite(os.path.join(args.save_path, 'visual', left_img_path.split('/')[-1]), vis)
+
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+    ax[0].imshow(input_left)
+    ax[0].set_title('Input Left')
+    ax[0].axis('off')
+    ax[1].imshow(left_disp)
+    ax[1].set_title('Disparity Visualization')
+    ax[1].axis('off')
+    plt.tight_layout()
+    plt.show()
+   
 
     if args.pc:
         save_path = left_img_path.split('/')[-1].split('.')[0] + '.ply'
         baseline = 0.120  # in meters
         doffs = 0
-        K = np.array([1049.68408203125, 0.0, 998.2841796875,
-                       0.0, 1049.68408203125, 589.4127197265625,
-                        0.0, 0.0, 1.0]).reshape(3,3)
+        K = zp.updated_K().copy()
         depth = K[0,0]*baseline/(left_disp + doffs)
+        
+
         xyz_map = depth2xyzmap(depth, K)
         pcd = toOpen3dCloud(xyz_map.reshape(-1,3), input_left.reshape(-1,3))
         keep_mask = (np.asarray(pcd.points)[:,2]>0) & (np.asarray(pcd.points)[:,2]<=args.z_far)
         keep_ids = np.arange(len(np.asarray(pcd.points)))[keep_mask]
         pcd = pcd.select_by_index(keep_ids)
-        # o3d.io.write_point_cloud(os.path.join(args.save_path, 'cloud', save_path), pcd)
+        o3d.io.write_point_cloud(os.path.join(args.save_path, 'cloud', save_path), pcd)
         o3d.visualization.draw_geometries([pcd])
 
 
