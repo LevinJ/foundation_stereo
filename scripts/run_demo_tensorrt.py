@@ -43,7 +43,8 @@ class ZedPreprocessor(object):
         self.crop_end_height = 940
         self.crop_start_width = 126
         self.crop_end_width = 1406
-        self.img_scale = 0.75
+        # self.img_scale = 0.75
+        self.img_scale = 0.25
     def prepare(self, image_path):
         # Load image
         input_image = imageio.imread(image_path)
@@ -179,11 +180,16 @@ def main():
     args = parse_args()
     args.left_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_l/00000005.png"
     args.right_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_r/00000005.png"
-    args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_fp16.engine"
-    args.height = 288
-    args.width = 960
+    # args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_fp16.engine"
+    # args.height = 288
+    # args.width = 960
     args.pc = True
     args.z_far = 100
+
+    #for pruned model
+    args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_96_320_disp64_fp16.engine"
+    # args.height = 96
+    # args.width = 320
 
     os.makedirs(args.save_path, exist_ok=True)
     paths = ['continuous/disparity', 'visual', 'denoised_cloud', 'cloud']
