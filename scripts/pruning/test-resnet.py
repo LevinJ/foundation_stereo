@@ -15,19 +15,45 @@ import torch.nn as nn
 # model = DynamicCat()
 # DG = tp.DependencyGraph().build_dependency(model, torch.randn(1, 3, 32, 32))
 
-class DynamicModel(nn.Module):
+import torch
+import torch.nn as nn
+import torch_pruning as tp
+
+class SkipConnectionModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.static_layer = nn.Linear(10, 10)
-
+        self.conv1 = nn.Conv2d(3, 16, 3, padding=1)
+        self.conv2 = nn.Conv2d(16, 16, 3, padding=1)
+        self.conv_skip = nn.Conv2d(3, 16, 1) # 1x1 conv for the skip connection
+        self.bn1 = nn.BatchNorm2d(16)
+        self.bn2 = nn.BatchNorm2d(16)
+        self.relu = nn.ReLU()
+    
     def forward(self, x):
-        # Create a new layer only if it doesn't exist
-        if not hasattr(self, 'dynamic_layer'):
-            self.dynamic_layer = nn.Linear(10, 10)
-        return self.dynamic_layer(self.static_layer(x))
+        # The skip connection: 
+        # x_skip is created from the input x
+        x_skip = self.conv_skip(x)
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.conv2(x)
+        x = self.bn2(x)
+        # The skip connection is added here
+        # x = x + x_skip 
+        x = torch.cat([x, x_skip], dim=1)
+        x = self.relu(x)
+        return x
 
-model = DynamicModel()
-DG = tp.DependencyGraph().build_dependency(model, torch.randn(1, 10, 10))
+model = SkipConnectionModel()
+example_inputs = torch.randn(1, 3, 32, 32)
+
+DG = tp.DependencyGraph().build_dependency(model, example_inputs=(example_inputs,))
+
+group = DG.get_pruning_group(model.conv1, tp.prune_conv_out_channels, idxs=[2,6,9])
+
+# 3. 打印依赖关系
+print(group.details())
+
 
 example_inputs = torch.randn(1,3,224,224)
 
