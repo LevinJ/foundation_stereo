@@ -25,7 +25,7 @@ class FoundationStereoOnnx(FoundationStereo):
         return disp
 
 class ResNetPruner:
-    def print_named_modules(self, model, only_leaf=False):
+    def print_named_modules(self, model, only_leaf=True):
         print("\nAll modules in model.named_modules():")
         idx = 0
         for name, module in model.named_modules():
@@ -63,7 +63,7 @@ class ResNetPruner:
         args = OmegaConf.create(cfg)
         self.model2 = FoundationStereoOnnx(args)
         ckpt = torch.load(ckpt_dir, weights_only=False)
-        self.model2.load_state_dict(ckpt['model'])
+        self.model2.load_state_dict(ckpt['model'], strict=False)
         self.model2.cuda()
         self.model2.eval()
         self.args = args
@@ -75,9 +75,9 @@ class ResNetPruner:
         example_inputs = (imag1, imag2)
         
         ignored_layers = []
-        for name, m in model.named_modules():
-            if name.startswith('update_block') or name.startswith('feature'):
-                ignored_layers.append(m)  
+        # for name, m in model.named_modules():
+        #     if name.startswith('update_block') or name.startswith('feature'):
+        #         ignored_layers.append(m)  
                 
         DG = tp.DependencyGraph().build_dependency(model, example_inputs=example_inputs, ignored_layers=ignored_layers)
 
