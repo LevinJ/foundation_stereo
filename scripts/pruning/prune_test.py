@@ -27,6 +27,10 @@ class FoundationStereoOnnx(FoundationStereo):
 class ResNetPruner:
     def print_named_modules(self, model, only_leaf=True):
         print("\nAll modules in model.named_modules():")
+        total_params = sum(p.numel() for p in model.parameters())
+        total_mb = total_params * 4 / (1024 ** 2)
+        total_billion = total_params / 1e9
+        print(f"Total parameters: {total_params} ({total_mb:.2f} MB, {total_billion:.4f} Billion)")
         idx = 0
         for name, module in model.named_modules():
             if only_leaf:
