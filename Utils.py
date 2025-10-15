@@ -139,3 +139,57 @@ def depth_uint8_decoding(depth_uint8, scale=1000):
   out = depth_uint8[...,0]*255*255 + depth_uint8[...,1]*255 + depth_uint8[...,2]
   return out/float(scale)
 
+def process_and_visualize_point_cloud(
+    depth: np.ndarray,  # (H, W) - Depth map
+    K: np.ndarray,      # (3, 3) - Camera intrinsic matrix
+    img: np.ndarray,    # (H, W, 3) - RGB image
+    out_dir: str,       # Path to output directory
+    z_far: float,       # Maximum depth to clip in the point cloud
+    denoise_cloud: bool = False,  # Whether to denoise the point cloud
+    denoise_nb_points: int = 30,  # Number of points for radius outlier removal
+    denoise_radius: float = 0.03  # Radius for outlier removal
+) -> None:
+    """
+    Generates, filters, and visualizes a point cloud from depth data.
+
+    Args:
+        depth (np.ndarray): Depth map of shape (H, W).
+        K (np.ndarray): Camera intrinsic matrix of shape (3, 3).
+        img (np.ndarray): Original RGB image of shape (H, W, 3) for coloring the point cloud.
+        out_dir (str): Directory to save the point cloud files.
+        z_far (float): Maximum depth to clip in the point cloud.
+        denoise_cloud (bool): Whether to denoise the point cloud.
+        denoise_nb_points (int): Number of points to consider for radius outlier removal.
+        denoise_radius (float): Radius to use for outlier removal.
+
+    Returns:
+        None
+    """
+    # Generate the point cloud
+    xyz_map = depth2xyzmap(depth, K)  # (H, W, 3)
+    pcd = toOpen3dCloud(xyz_map.reshape(-1, 3), img.reshape(-1, 3))  # (N, 3)
+
+    # Filter the point cloud based on depth
+    keep_mask = (np.asarray(pcd.points)[:, 2] > 0) & (np.asarray(pcd.points)[:, 2] <= z_far)
+    keep_ids = np.arange(len(np.asarray(pcd.points)))[keep_mask]
+    pcd = pcd.select_by_index(keep_ids)
+    o3d.io.write_point_cloud(f'{out_dir}/cloud.ply', pcd)
+    logging.info(f"PCL saved to {out_dir}")
+
+    # Optionally denoise the point cloud
+    if denoise_cloud:
+        logging.info("Denoising point cloud...")
+        _, ind = pcd.remove_radius_outlier(nb_points=denoise_nb_points, radius=denoise_radius)
+        inlier_cloud = pcd.select_by_index(ind)
+        o3d.io.write_point_cloud(f'{out_dir}/cloud_denoise.ply', inlier_cloud)
+        pcd = inlier_cloud
+
+    # Visualize the point cloud
+    logging.info("Visualizing point cloud. Press ESC to exit.")
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+    vis.add_geometry(pcd)
+    vis.get_render_option().point_size = 1.0
+    vis.get_render_option().background_color = np.array([0.5, 0.5, 0.5])
+    vis.run()
+    vis.destroy_window()
