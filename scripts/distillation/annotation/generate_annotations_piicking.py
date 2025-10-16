@@ -37,7 +37,7 @@ class GenAnnoPicking:
         args = self.args  # Use the passed args
         #with picked images
         img_folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702/'
-        eval = True
+        eval = False
 
         anno_file_sufix = ''
         if eval:
