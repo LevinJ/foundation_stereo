@@ -15,6 +15,7 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from PIL import Image
 from omegaconf import OmegaConf
+import torch.distributed as dist
 code_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(f'{code_dir}/../../')
 
@@ -22,30 +23,11 @@ from core.utils.utils import InputPadder
 from Utils import *
 from core.foundation_stereo import *
 from torchvision import transforms
+from scripts.distillation.evaluation.metric_per_image import epe_metric, d1_metric, threshold_metric
+from scripts.distillation.utils import common_utils
+from torch.utils.tensorboard import SummaryWriter
+from scripts.distillation.utils.common_utils import color_map_tensorboard, write_tensorboard
 
-# Define transform pipeline with padding
-# class DivisiblePad:
-#     def __init__(self, divis_by=32, force_square=False):
-#         self.divis_by = divis_by
-#         self.force_square = force_square
-#     def __call__(self, sample):
-#         left_img = sample['left']
-#         right_img = sample['right']
-#         disp_img = sample['disp']
-#         padder = InputPadder(left_img.shape, divis_by=self.divis_by, force_square=self.force_square)
-#         left_img_p, right_img_p = padder.pad(left_img, right_img)
-#         # Pad disp_img with zeros to match padded shape
-#         _, _, h, w = left_img_p.shape
-#         disp_shape = disp_img.shape
-#         disp_padded = torch.zeros((1, h, w), dtype=disp_img.dtype, device=disp_img.device)
-#         # Place original disp_img in top-left corner
-#         disp_padded[:, :disp_shape[1], :disp_shape[2]] = disp_img
-#         return {
-#             'left': left_img_p,
-#             'right': right_img_p,
-#             'disp': disp_padded,
-#             'padder': padder
-#         }
 class TransposeImage(object):
     def __init__(self):
         return
@@ -140,10 +122,168 @@ class ZedDataset(Dataset):
         }
         if self.transform:
             sample = self.transform(sample)
+        sample['index'] = idx
+        sample['name'] = sample_info['left']
         return sample
 
 
 
+class FoundationStereoEvaluator:
+    def __init__(self, config_txt, root_dir, args):
+        self.setup_logging(args)
+        logger = self.logger
+        set_seed(0)
+        torch.autograd.set_grad_enabled(False)
+
+        self.args = args
+        ckpt_dir = args.ckpt_dir
+        valid_iters = args.valid_iters
+        cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
+        if 'vit_size' not in cfg:
+            cfg['vit_size'] = 'vitl'
+        for k in args.__dict__:
+            cfg[k] = args.__dict__[k]
+        # cfg['ckpt_dir'] = ckpt_dir
+        # cfg['valid_iters'] = valid_iters
+        self.args = OmegaConf.create(cfg)
+        # logger.info(f"args:\n{self.args}")
+        logger.info(f"Using pretrained model from {ckpt_dir}")
+
+        
+
+        self.model = FoundationStereo(self.args)
+        ckpt = torch.load(ckpt_dir)
+        logger.info(f"ckpt global_step:{ckpt['global_step']}, epoch:{ckpt['epoch']}")
+        self.model.load_state_dict(ckpt['model'])
+        self.model.cuda()
+        self.model.eval()
+
+        # Define Transformations
+        data_transforms = transforms.Compose([
+            DivisiblePad(divis_by=32, mode='round'),
+            TransposeImage(),
+            ToTensor(),
+        ])
+        self.dataset = ZedDataset(config_txt, root_dir, transform=data_transforms)
+        self.dataloader = DataLoader(self.dataset, batch_size=1, shuffle=False)
+        self.valid_iters = valid_iters
+        return
+    def setup_logging(self, args):
+        args.output_dir = str(os.path.join(args.save_root_dir, args.exp_group_path, 'eval'))
+        os.makedirs(args.output_dir, exist_ok=True)
+        if args.dist_mode:
+            dist.barrier()
+        # log
+        if args.dist_mode:
+            dist.init_process_group(backend='nccl')
+            local_rank = int(os.environ["LOCAL_RANK"])
+            global_rank = int(os.environ["RANK"])
+        else:
+            local_rank = 0
+            global_rank = 0
+        # log_file = os.path.join(args.output_dir, 'eval_%s.log' % datetime.datetime.now().strftime('%Y%m%d-%H%M%S'))
+        log_file = None
+        logger = common_utils.create_logger(log_file, rank=local_rank)
+        tb_writer = SummaryWriter(log_dir=os.path.join(args.output_dir, 'eval_tensorboard')) if global_rank == 0 else None
+
+        self.logger = logger
+        self.tb_writer = tb_writer
+        self.local_rank = local_rank
+        self.global_rank = global_rank
+        return
+
+    def cal_metrics(self, disp_pred, disp_gt, metric_func_dict, epoch_metrics, data, i, infer_time):
+        local_rank = self.local_rank
+        current_epoch = 0
+        mask = (disp_gt > 0)
+
+        for m in metric_func_dict:
+            metric_func = metric_func_dict[m]
+            res = metric_func(disp_pred.squeeze(1), disp_gt, mask)
+            epoch_metrics[m]['indexes'].extend(data['index'].tolist())
+            epoch_metrics[m]['values'].extend(res.tolist())
+
+        if i % 10 == 0:
+            message = ('Evaluating Epoch:{:>2d} Iter:{:>4d}/{} InferTime: {:.2f}ms'
+                        ).format(current_epoch, i, len(self.dataloader), infer_time * 1000)
+            self.logger.info(message)
+
+            if self.tb_writer is not None:
+                img = torch.cat([data['left'][0], data['right'][0]], dim=1)
+                img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+                tb_info = {
+                    'image/eval/image': img,
+                    'image/eval/disp': color_map_tensorboard(data['disp'][0], disp_pred.squeeze(1)[0])
+                }
+                write_tensorboard(self.tb_writer, tb_info, current_epoch * len(self.dataloader) + i)
+
+        if i == len(self.dataloader) - 1:
+            self.logger.info(f"Finish evaluation epoch {current_epoch}, start to gather metrics.")
+            # gather from all gpus
+            if self.args.dist_mode:
+                dist.barrier()
+                self.logger.info("Start reduce metrics.")
+                for k in epoch_metrics.keys():
+                    indexes = torch.tensor(epoch_metrics[k]["indexes"]).to(local_rank)
+                    values = torch.tensor(epoch_metrics[k]["values"]).to(local_rank)
+                    gathered_indexes = [torch.zeros_like(indexes) for _ in range(dist.get_world_size())]
+                    gathered_values = [torch.zeros_like(values) for _ in range(dist.get_world_size())]
+                    dist.all_gather(gathered_indexes, indexes)
+                    dist.all_gather(gathered_values, values)
+                    unique_dict = {}
+                    for key, value in zip(torch.cat(gathered_indexes, dim=0).tolist(),
+                                        torch.cat(gathered_values, dim=0).tolist()):
+                        if key not in unique_dict:
+                            unique_dict[key] = value
+                    epoch_metrics[k]["indexes"] = list(unique_dict.keys())
+                    epoch_metrics[k]["values"] = list(unique_dict.values())
+
+            results = {}
+            for k in epoch_metrics.keys():
+                results[k] = torch.tensor(epoch_metrics[k]["values"]).mean()
+
+            if local_rank == 0 and self.tb_writer is not None:
+                tb_info = {}
+                for k, v in results.items():
+                    tb_info[f'scalar/val/{k}'] = v.item()
+
+                write_tensorboard(self.tb_writer, tb_info, current_epoch)
+
+            self.logger.info(f"Epoch {current_epoch} metrics: {results}")
+        return
+
+    def evaluate(self):
+        local_rank = self.local_rank
+        # total_epe = 0.0
+        # count = 0
+        metric_func_dict = {
+            'epe': epe_metric,
+            'd1_all': d1_metric,
+            'thres_1': partial(threshold_metric, threshold=1),
+            'thres_2': partial(threshold_metric, threshold=2),
+            'thres_3': partial(threshold_metric, threshold=3),
+        }
+        epoch_metrics = {}
+        for k in metric_func_dict.keys():
+            epoch_metrics[k] = {'indexes': [], 'values': []}
+        # for sample in self.dataloader:
+        for i, data in enumerate(self.dataloader):
+            for k, v in data.items():
+                data[k] = v.to(local_rank) if torch.is_tensor(v) else v
+            # Model inference
+            with torch.no_grad():
+                infer_start = time.time()
+                pred_disp = self.model.forward(data['left'], data['right'], iters=self.valid_iters, test_mode=True)
+                infer_time = time.time() - infer_start
+            self.cal_metrics(pred_disp, data['disp'], metric_func_dict, epoch_metrics, data, i, infer_time)
+            # Compute metrics
+            # mask = (disp_gt > 0)
+            # epe = torch.mean(torch.abs(pred_disp.squeeze(1) - disp_gt)[mask]).item()
+            # total_epe += epe
+            # count += 1
+            # print(f"Sample {count}: EPE = {epe}")
+        # mean_epe = total_epe / count if count > 0 else 0.0
+        # print(f"Mean EPE over dataset: {mean_epe}")
 
 if __name__ == "__main__":
     code_dir = os.path.dirname(os.path.realpath(__file__))
@@ -152,69 +292,13 @@ if __name__ == "__main__":
         '--ckpt_dir', default=f'{code_dir}/../../pretrained_models/23-51-11/model_best_bp2.pth', type=str, help='pretrained model path')
     parser.add_argument('--valid_iters', type=int, default=32,
                         help='number of flow-field updates during forward pass')
+    parser.add_argument('--save_root_dir', type=str, default='./output', help='save root dir for this experiment')
+    parser.add_argument('--exp_group_path', type=str, default='zed_fs', help='experiment group path')
+    parser.add_argument('--dist_mode', action='store_true', default=False, help='enable distributed mode')
+
     args = parser.parse_args()
-
-    set_logging_format()
-    set_seed(0)
-    torch.autograd.set_grad_enabled(False)
-
-    ckpt_dir = args.ckpt_dir
-    cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
-    if 'vit_size' not in cfg:
-        cfg['vit_size'] = 'vitl'
-    for k in args.__dict__:
-        cfg[k] = args.__dict__[k]
-    args = OmegaConf.create(cfg)
-    logging.info(f"args:\n{args}")
-    logging.info(f"Using pretrained model from {ckpt_dir}")
-
-    model = FoundationStereo(args)
-
-    ckpt = torch.load(ckpt_dir)
-    logging.info(
-        f"ckpt global_step:{ckpt['global_step']}, epoch:{ckpt['epoch']}")
-    model.load_state_dict(ckpt['model'])
-
-    model.cuda()
-    model.eval()
-
-
-    # ZedDataset for evaluation
-
-    # Prepare dataset and dataloader
+    
     config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
     root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
-    
-
-    # 2. Define Transformations
-    data_transforms = transforms.Compose([
-        DivisiblePad(divis_by=32, mode='round'),
-        TransposeImage(),
-        ToTensor(),
-    ])
-    dataset = ZedDataset(config_txt, root_dir, transform=data_transforms)
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False)
-
-    # Evaluate EPE metric
-    total_epe = 0.0
-    count = 0
-    for batch in dataloader:
-        sample = batch
-        left_img = sample['left'].cuda()
-        right_img = sample['right'].cuda()
-        disp_gt = sample['disp'].cuda()
-        # padder = sample.get('padder', None)
-        # Model inference
-        with torch.no_grad():
-            pred_disp = model.forward(left_img, right_img, iters=args.valid_iters, test_mode=True)
-            # Remove padding if applied
-            # if padder is not None:
-            #     pred_disp = padder.unpad(pred_disp.float())
-        # Compute EPE
-        mask = (disp_gt > 0)
-        epe = torch.mean(torch.abs(pred_disp.squeeze(1) - disp_gt)[mask]).item()
-        total_epe += epe
-        count += 1
-        print(f"Sample {count}: EPE = {epe}")
-    mean_epe = total_epe / count if count > 0 else 0.0
-    print(f"Mean EPE over dataset: {mean_epe}")
+    evaluator = FoundationStereoEvaluator(config_txt, root_dir, args)
+    evaluator.evaluate()

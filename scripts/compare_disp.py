@@ -5,8 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Paths to the disparity .npy files
-file1 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006_2.npy'
-file2 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006_3.npy'
+file1 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006.npy'
+file2 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006_2.npy'
 
 # Path to the original image
 orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/250610/colored_l/00000006.png'
@@ -19,10 +19,13 @@ orig_img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2RGB)
 disp1 = np.load(file1)
 disp2 = np.load(file2)
 
-crop = 0
-disp1[:crop, :] = 0
-disp2[:crop, :] = 0
-orig_img[:crop, :, :] = 0
+# mask = disp1 <= 0
+# disp2[mask] = 0
+
+# crop = 0
+# disp1[:crop, :] = 0
+# disp2[:crop, :] = 0
+# orig_img[:crop, :, :] = 0
 
 assert disp1.shape == disp2.shape, "Disparity images must have identical shapes."
 # Compute End-Point Error (EPE)
