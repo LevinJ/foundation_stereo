@@ -309,8 +309,11 @@ if __name__ == "__main__":
     # config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
     # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
 
+    config_txt = '/media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt'
+    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/20250702/'
+
     #for kitti12
-    config_txt = '/home/levin/workspace/temp/OpenStereo/data/KITTI12/kitti12_train180_0.txt'
-    root_dir = '/media/levin/DATA/nerf/public_depth/kitti12/'
+    # config_txt = '/home/levin/workspace/temp/OpenStereo/data/KITTI12/kitti12_train180_0.txt'
+    # root_dir = '/media/levin/DATA/nerf/public_depth/kitti12/'
     evaluator = FoundationStereoEvaluator(config_txt, root_dir, args)
     evaluator.evaluate()
