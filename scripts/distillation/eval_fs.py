@@ -23,7 +23,7 @@ from core.utils.utils import InputPadder
 from Utils import *
 from core.foundation_stereo import *
 from torchvision import transforms
-from scripts.distillation.evaluation.metric_per_image import epe_metric, d1_metric, threshold_metric
+from scripts.distillation.evaluation.metric_per_image import epe_metric, d1_metric, threshold_metric,bpx_metric
 from scripts.distillation.utils import common_utils
 from torch.utils.tensorboard import SummaryWriter
 from scripts.distillation.utils.common_utils import color_map_tensorboard, write_tensorboard
@@ -113,7 +113,13 @@ class ZedDataset(Dataset):
         sample_info = self.samples[idx]
         left_img = np.array(Image.open(sample_info['left']).convert('RGB'), dtype=np.float32)
         right_img = np.array(Image.open(sample_info['right']).convert('RGB'), dtype=np.float32)
-        disp_img = np.load(sample_info['disp']).astype(np.float32) 
+
+        # disp_img = np.load(sample_info['disp']).astype(np.float32) 
+        # Load the disparity images
+        if sample_info['disp'].endswith('.npy'):
+            disp_img = np.load(sample_info['disp']).astype(np.float32)
+        else:
+            disp_img = np.array(Image.open(sample_info['disp']), dtype=np.float32) / 256.0
 
         sample = {
             'left': left_img,
@@ -259,9 +265,11 @@ class FoundationStereoEvaluator:
         metric_func_dict = {
             'epe': epe_metric,
             'd1_all': d1_metric,
-            'thres_1': partial(threshold_metric, threshold=1),
-            'thres_2': partial(threshold_metric, threshold=2),
-            'thres_3': partial(threshold_metric, threshold=3),
+            'bp_1': partial(bpx_metric, x=1),
+            'bp_2': partial(bpx_metric, x=2),
+            # 'thres_1': partial(threshold_metric, threshold=1),
+            # 'thres_2': partial(threshold_metric, threshold=2),
+            # 'thres_3': partial(threshold_metric, threshold=3),
         }
         epoch_metrics = {}
         for k in metric_func_dict.keys():
@@ -298,7 +306,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
-    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
+    # config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
+    # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
+
+    #for kitti12
+    config_txt = '/home/levin/workspace/temp/OpenStereo/data/KITTI12/kitti12_train180_0.txt'
+    root_dir = '/media/levin/DATA/nerf/public_depth/kitti12/'
     evaluator = FoundationStereoEvaluator(config_txt, root_dir, args)
     evaluator.evaluate()
