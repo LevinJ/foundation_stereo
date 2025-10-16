@@ -158,7 +158,7 @@ class FoundationStereoEvaluator:
         
 
         self.model = FoundationStereo(self.args)
-        ckpt = torch.load(ckpt_dir)
+        ckpt = torch.load(ckpt_dir, weights_only=False)
         logger.info(f"ckpt global_step:{ckpt['global_step']}, epoch:{ckpt['epoch']}")
         self.model.load_state_dict(ckpt['model'])
         self.model.cuda()
