@@ -98,8 +98,12 @@ class AnnotationViewer:
 if __name__ == "__main__":
     default_idx = 13  # Set to an integer index to pick a specific annotation
     default_idx = None
-    config_txt = '/media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt'
-    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/20250702/'
+    # config_txt = '/media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt'
+    # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/20250702/'
+
+    default_idx = 13
+    config_txt = '/media/levin/DATA/nerf/new_es8/stereo/250610/picked_images_eval_anno.txt'
+    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/250610/'
     # default_idx = 0  # Set to an integer index to pick a specific annotation
     # config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
     # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'

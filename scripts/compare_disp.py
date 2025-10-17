@@ -5,13 +5,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 
+# # Paths to the disparity .npy files
+# file1 = '/media/levin/DATA/nerf/public_depth/kitti12/training/disp_occ/000000_10.png'
+# file2 = '/media/levin/DATA/nerf/public_depth/kitti12/training/disp/000000_10.npy'
+
+
+# # Path to the original image
+# orig_img_path = '/media/levin/DATA/nerf/public_depth/kitti12/training/colored_0/000000_10.png'
+
 # Paths to the disparity .npy files
-file1 = '/media/levin/DATA/nerf/public_depth/kitti12/training/disp_occ/000000_10.png'
-file2 = '/media/levin/DATA/nerf/public_depth/kitti12/training/disp/000000_10.npy'
+file1 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006.npy'
+file2 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp_test/00000006.npy'
 
 
 # Path to the original image
-orig_img_path = '/media/levin/DATA/nerf/public_depth/kitti12/training/colored_0/000000_10.png'
+orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/250610/left_images/00000006.png'
 
 # Load the original image (as RGB)
 orig_img = cv2.imread(orig_img_path)
@@ -25,13 +33,15 @@ else:
 
 disp2 = np.load(file2)
 
-mask = (disp1 > 0)
+crop = 1000
+disp1[crop:, ...] = 0
+disp2[crop:, ...] = 0
+orig_img[crop:, ...] = 0
+
+mask = (disp1 > 1)
 
 
-# crop = 0
-# disp1[:crop, :] = 0
-# disp2[:crop, :] = 0
-# orig_img[:crop, :, :] = 0
+
 
 assert disp1.shape == disp2.shape, "Disparity images must have identical shapes."
 # Compute End-Point Error (EPE)
@@ -63,7 +73,7 @@ def compute_D1_metric(gt_disp, pred_disp, threshold=3, percent=0.05):
 D1_error = compute_D1_metric(disp1, disp2)
 print(f"D1 error (percentage of bad pixels): {D1_error:.4f}%")
 # Compare the arrays
-if np.array_equal(disp1, disp2):
+if np.array_equal(disp1[mask], disp2[mask]):
     print("The two disparity images are the same.")
 else:
     print("The two disparity images are different.")
