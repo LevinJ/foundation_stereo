@@ -218,6 +218,10 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
             prob = F.softmax(self.classifier(comb_volume).squeeze(1), dim=1)  #(B, max_disp, H, W)
             if init_disp is None:
               init_disp = disparity_regression(prob, self.args.max_disp//4)  # Weighted  sum of disparity
+              if iters == 0:
+                target_size = image1.shape[2:]
+                upsampled_disparity = F.interpolate(init_disp, size=target_size, mode='bilinear', align_corners=False)
+                return upsampled_disparity
 
             cnet_list = self.cnet(image1, vit_feat=vit_feat, num_layers=self.args.n_gru_layers)   #(1/4, 1/8, 1/16)
             cnet_list = list(cnet_list)

@@ -32,6 +32,8 @@ if __name__ == '__main__':
     # args.width = (args.width // 3) 
     # args.valid_iters = 4
     # logging.info(f'Input image size: {args.height}x{args.width}')
+
+    # args.valid_iters = 6
     os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
 
     torch.autograd.set_grad_enabled(False)

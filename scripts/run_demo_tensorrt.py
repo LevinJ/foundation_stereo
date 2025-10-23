@@ -43,8 +43,8 @@ class ZedPreprocessor(object):
         self.crop_end_height = 940
         self.crop_start_width = 126
         self.crop_end_width = 1406
-        # self.img_scale = 0.75
-        self.img_scale = 0.25
+        self.img_scale = 0.75
+        # self.img_scale = 0.25
     def prepare(self, image_path):
         # Load image
         input_image = imageio.imread(image_path)
@@ -152,7 +152,13 @@ def inference(left_img_path: str, right_img_path: str, model, args: argparse.Nam
         keep_mask = (np.asarray(pcd.points)[:,2]>0) & (np.asarray(pcd.points)[:,2]<=args.z_far)
         keep_ids = np.arange(len(np.asarray(pcd.points)))[keep_mask]
         pcd = pcd.select_by_index(keep_ids)
-        o3d.io.write_point_cloud(os.path.join(args.save_path, 'cloud', save_path), pcd)
+        # Save the filtered point cloud to the script's temp folder
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        temp_dir = os.path.join(script_dir, 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_ply_path = os.path.join(temp_dir, "cloud_tensorrt.ply")
+        o3d.io.write_point_cloud(temp_ply_path, pcd)
+        logging.info(f"Filtered point cloud saved to {temp_ply_path}")
         o3d.visualization.draw_geometries([pcd])
 
 
@@ -180,14 +186,15 @@ def main():
     args = parse_args()
     args.left_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_l/00000005.png"
     args.right_img = "/media/levin/DATA/nerf/new_es8/stereo/250610/colored_r/00000005.png"
-    # args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_fp16.engine"
+    args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_6_fp16.engine"
     # args.height = 288
     # args.width = 960
     args.pc = True
     args.z_far = 100
 
     #for pruned model
-    args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_96_320_disp64_fp16.engine"
+    # args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_96_320_disp64_fp16.engine"
+    # args.pretrained = "/media/levin/DATA/checkpoints/foundationstereo/foundation_small_288_960_disp64_0_fp16.engine"
     # args.height = 96
     # args.width = 320
 

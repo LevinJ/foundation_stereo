@@ -67,6 +67,7 @@ class FoundationStereoEvaluator:
         # self.args.vit_size = 'vits'
         # self.valid_iters = 4
         # self.args.max_disp = 32
+        # self.args.hidden_dims = [32, 32, 32]
 
         self.model = FoundationStereo(self.args)
         ckpt = torch.load(ckpt_dir, weights_only=False)
@@ -207,14 +208,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     
-    # config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
-    # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
+    config_txt = '/home/levin/workspace/temp/OpenStereo/data/ZED/zed_250601.txt'
+    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/'
 
     # config_txt = '/media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt'
     # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/20250702/'
 
-    config_txt = '/media/levin/DATA/nerf/new_es8/stereo/250610/picked_images_eval_anno.txt'
-    root_dir = '/media/levin/DATA/nerf/new_es8/stereo/250610/'
+    # config_txt = '/media/levin/DATA/nerf/new_es8/stereo/250610/picked_images_eval_anno.txt'
+    # root_dir = '/media/levin/DATA/nerf/new_es8/stereo/250610/'
 
     #for kitti12
     # config_txt = '/home/levin/workspace/temp/OpenStereo/data/KITTI12/kitti12_train180_0.txt'

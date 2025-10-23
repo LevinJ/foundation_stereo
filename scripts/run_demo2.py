@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # logging.info(f"args:\n{args}")
     logging.info(f"Using pretrained model from {ckpt_dir}")
     # args.vit_size = 'vits'
-    # args.valid_iters = 4
+    # args.valid_iters = 6
     # args.max_disp = 32
 
     model = FoundationStereo(args)
@@ -102,6 +102,8 @@ if __name__ == "__main__":
     code_dir = os.path.dirname(os.path.realpath(__file__))
     img0 = imageio.imread(args.left_file, pilmode="RGB")
     img1 = imageio.imread(args.right_file, pilmode="RGB")
+    # img0 = img0[:1000,...]
+    # img1 = img1[:1000,...]
     scale = args.scale
     assert scale <= 1, "scale must be <=1"
     img0 = cv2.resize(img0, fx=scale, fy=scale, dsize=None)
