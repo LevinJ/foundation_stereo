@@ -191,12 +191,21 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
         return up_disp.float()
 
 
-    def forward(self, image1, image2, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
+    def forward(self, data = None, image1=None, image2=None, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
         """ Estimate disparity between pair of frames """
+        dict_mode = data is not None
+        if not dict_mode:
+            image1 = normalize_image(image1)
+            image2 = normalize_image(image2)
+        else:
+            image1 = data['left']
+            image2 = data['right']
+            low_memory = False
+            init_disp = None
+            test_mode = not self.training
+            iters = self.args.valid_iters if test_mode else self.args.train_iters
         B = len(image1)
         low_memory = low_memory or (self.args.get('low_memory', False))
-        image1 = normalize_image(image1)
-        image2 = normalize_image(image2)
         with torch.amp.autocast('cuda', enabled=self.args.mixed_precision):
             out, vit_feat = self.feature(torch.cat([image1, image2], dim=0))
             vit_feat = vit_feat[:B]
@@ -253,9 +262,52 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
 
 
         if test_mode:
-            return disp_up
+            if dict_mode:
+                return {'disp_pred': disp_up}
+            else:
+                return disp_up
 
-        return init_disp, disp_preds
+        model_pred = {'init_disp': init_disp, 'disp_preds': disp_preds, 'disp_pred': disp_preds[-1]}
+        return model_pred
+    def get_loss(self, model_pred, input_data):
+        disp_gt = input_data["disp"]
+
+        mask = (disp_gt < self.args.max_disp) & (disp_gt > 0)
+        valid = mask.float()
+
+        disp_gt = disp_gt.unsqueeze(1)
+        mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
+        valid = ((valid >= 0.5) & (mag < self.args.max_disp)).unsqueeze(1)
+        assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
+        assert not torch.isinf(disp_gt[valid.bool()]).any()
+
+        disp_init_pred = model_pred['init_disp']
+        disp_init_pred = F.interpolate(disp_init_pred, scale_factor=4, mode='bilinear', align_corners=True) * 4
+
+        # 检查 data['disp'] 中是否存在任何 NaN 或 inf
+        if torch.isnan(disp_gt[valid.bool()]).any() or torch.isinf(disp_gt[valid.bool()]).any():
+            # 处理逻辑（如打印日志、替换无效值等）
+            self.logger.warning(f"disp contains invalid values (NaN/inf)")
+            print('\n'*3 + input_data['name'] + '\n'*3)
+            raise ValueError
+
+        disp_loss = 1.0 * F.smooth_l1_loss(disp_init_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
+
+        # gru loss
+        loss_gamma = 0.9
+        disp_preds = model_pred['disp_preds']
+        n_predictions = len(disp_preds)
+        assert n_predictions >= 1
+        for i in range(n_predictions):
+            adjusted_loss_gamma = loss_gamma ** (15 / (n_predictions - 1))
+            i_weight = adjusted_loss_gamma ** (n_predictions - i - 1)
+            i_loss = (disp_preds[i][valid.bool()] - disp_gt[valid.bool()]).abs()
+            # assert i_loss.shape == valid.shape, [i_loss.shape, valid.shape, disp_gt.shape, disp_preds[i].shape]
+            # disp_loss += i_weight * i_loss[valid.bool()].mean()
+            disp_loss += i_weight * i_loss.mean()
+
+        loss_info = {'scalar/train/loss_disp': disp_loss.item()}
+        return disp_loss, loss_info
 
 
     def run_hierachical(self, image1, image2, iters=12, test_mode=False, low_memory=False, small_ratio=0.5):
