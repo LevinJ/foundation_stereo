@@ -190,8 +190,12 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
 
         return up_disp.float()
 
-
-    def forward(self, data = None, image1=None, image2=None, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
+    def forward(self, image1=None, image2=None, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
+        if image2 is None:
+            return self.forward2(data=image1)
+        return self.forward2(image1=image1, image2=image2, iters=iters, flow_init=flow_init, test_mode=test_mode, low_memory=low_memory, init_disp=init_disp)
+        
+    def forward2(self, data = None, image1=None, image2=None, iters=12, flow_init=None, test_mode=False, low_memory=False, init_disp=None):
         """ Estimate disparity between pair of frames """
         dict_mode = data is not None
         if not dict_mode:
