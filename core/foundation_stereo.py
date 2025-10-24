@@ -230,11 +230,16 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
             # Init disp from geometry encoding volume
             prob = F.softmax(self.classifier(comb_volume).squeeze(1), dim=1)  #(B, max_disp, H, W)
             if init_disp is None:
-              init_disp = disparity_regression(prob, self.args.max_disp//4)  # Weighted  sum of disparity
-              if iters == 0:
-                target_size = image1.shape[2:]
-                upsampled_disparity = F.interpolate(init_disp, size=target_size, mode='bilinear', align_corners=False)
-                return upsampled_disparity
+                init_disp = disparity_regression(prob, self.args.max_disp//4)  # Weighted  sum of disparity
+                if iters == 0:
+                    # target_size = image1.shape[2:]
+                    # upsampled_disparity = F.interpolate(
+                    #     init_disp, size=target_size, mode='bilinear', align_corners=False)
+                    upsampled_disparity = F.interpolate(init_disp, scale_factor=4, mode='bilinear', align_corners=True) * 4
+                    if dict_mode:
+                        return {'disp_pred': upsampled_disparity}
+                    else:
+                        return upsampled_disparity
 
             cnet_list = self.cnet(image1, vit_feat=vit_feat, num_layers=self.args.n_gru_layers)   #(1/4, 1/8, 1/16)
             cnet_list = list(cnet_list)
@@ -273,7 +278,37 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
 
         model_pred = {'init_disp': init_disp, 'disp_preds': disp_preds, 'disp_pred': disp_preds[-1]}
         return model_pred
+    def get_distillation_loss(self, model_pred, input_data):
+        disp_gt = input_data["teacher_pred"]
+        disp_gt = disp_gt.squeeze(1)
+
+        mask = (disp_gt < self.args.max_disp) & (disp_gt > 0)
+        valid = mask.float()
+
+        disp_gt = disp_gt.unsqueeze(1)
+        mag = torch.sum(disp_gt ** 2, dim=1).sqrt()
+        valid = ((valid >= 0.5) & (mag < self.args.max_disp)).unsqueeze(1)
+        assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
+        assert not torch.isinf(disp_gt[valid.bool()]).any()
+
+        disp_init_pred = model_pred['disp_pred']
+
+        # 检查 data['disp'] 中是否存在任何 NaN 或 inf
+        if torch.isnan(disp_gt[valid.bool()]).any() or torch.isinf(disp_gt[valid.bool()]).any():
+            # 处理逻辑（如打印日志、替换无效值等）
+            self.logger.warning(f"disp contains invalid values (NaN/inf)")
+            print('\n'*3 + input_data['name'] + '\n'*3)
+            raise ValueError
+
+        disp_loss = 1.0 * \
+            F.smooth_l1_loss(
+                disp_init_pred[valid.bool()], disp_gt[valid.bool()], reduction='mean')
+
+        loss_info = {'scalar/train/loss_disp': disp_loss.item()}
+        return disp_loss, loss_info
     def get_loss(self, model_pred, input_data):
+        if "teacher_pred" in input_data:
+            return self.get_distillation_loss(model_pred, input_data)
         disp_gt = input_data["disp"]
 
         mask = (disp_gt < self.args.max_disp) & (disp_gt > 0)

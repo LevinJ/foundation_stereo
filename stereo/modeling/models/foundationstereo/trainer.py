@@ -39,6 +39,14 @@ class Trainer(TrainerTemplate):
                 data[k] = v.to(self.local_rank) if torch.is_tensor(v) else v
             data_timer = time.time()
 
+            # If trainer_teacher exists, run inference with its model
+            if hasattr(self.cfgs, 'trainer_teacher') and self.cfgs.trainer_teacher is not None:
+                with torch.no_grad():
+                    with torch.amp.autocast('cuda', enabled=self.cfgs.OPTIMIZATION.AMP):
+                        teacher_pred = self.cfgs.trainer_teacher.model(data)['disp_pred']
+                        data['teacher_pred'] = teacher_pred.to(self.local_rank)
+                # You can use teacher_pred for distillation or logging as needed
+
             with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
                 model_pred = self.model(data)
                 infer_timer = time.time()
