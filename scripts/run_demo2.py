@@ -54,16 +54,25 @@ if __name__ == "__main__":
 
     # speed bump
     # folder = '/media/levin/DATA/nerf/new_es8/stereo_20250331/20250331/jiuting_campus'
-    folder = '/media/levin/DATA/nerf/new_es8/stereo/250610'
-    # file_name = '20250331_111635.913_10.png'
-    file_name = '00000006.png'
+    # folder = '/media/levin/DATA/nerf/new_es8/stereo/250610'
+    # # file_name = '20250331_111635.913_10.png'
+    # file_name = '00000006.png'
 
-    # big hole
-    # folder = '/media/levin/DATA/nerf/new_es8/stereo_20250331/20250331/lidar'
-    # file_name = '00000062.png'
+    # # big hole
+    # # folder = '/media/levin/DATA/nerf/new_es8/stereo_20250331/20250331/lidar'
+    # # file_name = '00000062.png'
 
-    args.left_file = f"{folder}/colored_l/{file_name}"
-    args.right_file = f"{folder}/colored_r/{file_name}"
+    # args.left_file = f"{folder}/colored_l/{file_name}"
+    # args.right_file = f"{folder}/colored_r/{file_name}"
+
+    folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
+    file_name = '1751438147.4760577679.png'
+    args.left_file = f"{folder}/left_images/{file_name}"
+    args.right_file = f"{folder}/right_images/{file_name}"
+
+
+
+
     args.intrinsic_file = "/media/levin/DATA/nerf/new_es8/stereo_20250331/K_Zed.txt"
 
     args.z_far = 80
@@ -75,7 +84,8 @@ if __name__ == "__main__":
     torch.autograd.set_grad_enabled(False)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
     ckpt_dir = args.ckpt_dir
     cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
     if 'vit_size' not in cfg:
@@ -86,15 +96,21 @@ if __name__ == "__main__":
     # logging.info(f"args:\n{args}")
     logging.info(f"Using pretrained model from {ckpt_dir}")
     # args.vit_size = 'vits'
-    # args.valid_iters = 6
-    # args.max_disp = 32
+    args.valid_iters = 16
+    args.max_disp = 64
 
     model = FoundationStereo(args)
 
     ckpt = torch.load(ckpt_dir)
+    global_step = ckpt.get('global_step', 'N/A')
     logging.info(
-        f"ckpt global_step:{ckpt['global_step']}, epoch:{ckpt['epoch']}")
-    model.load_state_dict(ckpt['model'])
+        f"ckpt global_step:{global_step}, epoch:{ckpt['epoch']}")
+    model_state = None
+    if 'model' in ckpt:
+        model_state = ckpt['model']
+    else:
+        model_state = ckpt['model_state']
+    model.load_state_dict(model_state)
 
     model.cuda()
     model.eval()
