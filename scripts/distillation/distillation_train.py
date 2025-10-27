@@ -43,7 +43,7 @@ def parse_config():
     args = parser.parse_args()
     args.dist_mode = False 
     args.extra_tag = 'debug'
-    args.cfg_file = 'cfgs/foundationstereo/fstereo_sceneflow.yaml'
+    args.cfg_file = 'cfgs/foundationstereo/fstereo_zed.yaml'
 
     yaml_config = common_utils.config_loader(args.cfg_file)
     cfgs = EasyDict(yaml_config)

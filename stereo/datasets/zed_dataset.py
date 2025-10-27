@@ -19,14 +19,21 @@ class ZedDataset(DatasetTemplate):
     def __getitem__(self, idx):
         item = self.data_list[idx]
         full_paths = [os.path.join(self.root, x) for x in item]
-        left_img_path, right_img_path, disp_img_path = full_paths
+        if len(full_paths) != 3:
+            #in case we have no gt (distillation mode)
+            left_img_path, right_img_path = full_paths
+        else:
+            left_img_path, right_img_path, disp_img_path = full_paths
         if self.use_noc:
             disp_img_path = disp_img_path.replace('disp_occ', 'disp_noc')
         # image
         left_img = np.array(Image.open(left_img_path).convert('RGB'), dtype=np.float32)
         right_img = np.array(Image.open(right_img_path).convert('RGB'), dtype=np.float32)
         # disp
-        disp_img = np.load(disp_img_path)
+        if len(full_paths) != 3:
+            disp_img = np.zeros((left_img.shape[0], left_img.shape[1]), dtype=np.float32)
+        else:
+            disp_img = np.load(disp_img_path)
 
         sample = {
             'left': left_img,
