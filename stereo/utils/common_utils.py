@@ -180,12 +180,15 @@ def load_params_from_file(model, filename, device, dist_mode, logger, strict=Tru
         print(message)
 
 
-def color_map_tensorboard(disp_gt, pred, disp_max=192):
+def color_map_tensorboard(disp_gt, pred, disp_max=192, mask = None):
     cm = plt.get_cmap('plasma')
 
     disp_gt = disp_gt.detach().data.cpu().numpy()
     pred = pred.detach().data.cpu().numpy()
     error_map = np.abs(pred - disp_gt)
+    if mask is not None:
+        mask = mask.bool().detach().data.cpu().numpy()
+        error_map[~mask] = 0.0
 
     disp_gt = np.clip(disp_gt, a_min=0, a_max=disp_max)
     pred = np.clip(pred, a_min=0, a_max=disp_max)

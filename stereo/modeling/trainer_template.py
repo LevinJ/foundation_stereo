@@ -304,9 +304,11 @@ class TrainerTemplate:
                 if self.cfgs.TRAINER.EVAL_VISUALIZATION and self.tb_writer is not None:
                     img = torch.cat([data['left'][0], data['right'][0]], dim=1)
                     img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+                    mask = mask.float().squeeze()
                     tb_info = {
                         'image/eval/image': img,
-                        'image/eval/disp': color_map_tensorboard(data['disp'][0], model_pred['disp_pred'].squeeze(1)[0])
+                        'image/eval/mask': mask,
+                        'image/eval/disp': color_map_tensorboard(data['disp'][0], model_pred['disp_pred'].squeeze(1)[0], mask=mask)
                     }
                     write_tensorboard(self.tb_writer, tb_info, current_epoch * len(self.eval_loader) + i)
 
