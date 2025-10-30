@@ -41,7 +41,7 @@ def parse_config():
     parser.add_argument('--pin_memory', action='store_true', default=False, help='data loader pin memory')
 
     args = parser.parse_args()
-    args.dist_mode = False 
+    # args.dist_mode = False 
     args.extra_tag = 'debug'
     args.cfg_file = 'cfgs/foundationstereo/fstereo_zed.yaml'
 

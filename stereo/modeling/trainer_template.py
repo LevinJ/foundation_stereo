@@ -304,7 +304,7 @@ class TrainerTemplate:
                 if self.cfgs.TRAINER.EVAL_VISUALIZATION and self.tb_writer is not None:
                     img = torch.cat([data['left'][0], data['right'][0]], dim=1)
                     img = (img - img.min()) / (img.max() - img.min() + 1e-8)
-                    mask = mask.float().squeeze()
+                    mask = mask.float()[0]
                     tb_info = {
                         'image/eval/image': img,
                         'image/eval/mask': mask,

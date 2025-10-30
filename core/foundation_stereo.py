@@ -291,7 +291,7 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
         valid = ((valid >= 0.5) & (mag < self.args.max_disp)).unsqueeze(1)
         assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
         assert not torch.isinf(disp_gt[valid.bool()]).any()
-        self.mask = valid.float().squeeze()
+        self.mask = valid.float().squeeze(1)
 
         disp_init_pred = model_pred['disp_pred']
 
@@ -321,7 +321,7 @@ class FoundationStereo(nn.Module, huggingface_hub.PyTorchModelHubMixin):
         valid = ((valid >= 0.5) & (mag < self.args.max_disp)).unsqueeze(1)
         assert valid.shape == disp_gt.shape, [valid.shape, disp_gt.shape]
         assert not torch.isinf(disp_gt[valid.bool()]).any()
-        self.mask = valid.float().squeeze()
+        self.mask = valid.float().squeeze(1)
 
         disp_init_pred = model_pred['init_disp']
         disp_init_pred = F.interpolate(disp_init_pred, scale_factor=4, mode='bilinear', align_corners=True) * 4

@@ -2,7 +2,7 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: ZedDataset
             DATA_SPLIT: {
-                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_anno.txt,
+                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
                 EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
                 TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt
             }
@@ -10,6 +10,8 @@ DATA_CONFIG:
 
     DATA_TRANSFORM:
         TRAINING:
+            # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -1, MAX_SCALE: -1., SCALE_PROB: 1, STRETCH_PROB: 0 }
+            # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
             - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
             - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
             - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -0.2, MAX_SCALE: 0.4, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
@@ -20,6 +22,7 @@ DATA_CONFIG:
         EVALUATING:
             # - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
             - { NAME: RandomCrop, SIZE: [ 384, 768 ], Y_JITTER: false }
+            # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -1, MAX_SCALE: -1., SCALE_PROB: 1, STRETCH_PROB: 0 }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
@@ -46,12 +49,12 @@ OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: true
-    BATCH_SIZE_PER_GPU: 1
-    NUM_EPOCHS: 50
+    BATCH_SIZE_PER_GPU: 4
+    NUM_EPOCHS: 1000
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 1.0e-05
+        LR: &lr 1.0e-04
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 
@@ -66,7 +69,7 @@ OPTIMIZATION:
         CLIP_VALUE: 0.1
 
 EVALUATOR:
-    BATCH_SIZE_PER_GPU: 1
+    BATCH_SIZE_PER_GPU: 4
     MAX_DISP: 192
     METRIC:
         - d1_all
@@ -77,7 +80,7 @@ EVALUATOR:
 
 TRAINER:
     EVAL_INTERVAL: 10
-    CKPT_SAVE_INTERVAL: 10
+    CKPT_SAVE_INTERVAL: 1000
     MAX_CKPT_SAVE_NUM: 2
     LOGGER_ITER_INTERVAL: 10
     TRAIN_VISUALIZATION: True
