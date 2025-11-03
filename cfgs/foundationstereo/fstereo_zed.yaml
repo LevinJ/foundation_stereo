@@ -2,7 +2,7 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: ZedDataset
             DATA_SPLIT: {
-                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
+                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_anno_64.txt,
                 EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
                 TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt
             }
@@ -12,9 +12,9 @@ DATA_CONFIG:
         TRAINING:
             # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -1, MAX_SCALE: -1., SCALE_PROB: 1, STRETCH_PROB: 0 }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
-            - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
-            - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
-            - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -0.2, MAX_SCALE: 0.4, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
+            # - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
+            # - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
+            # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -0.2, MAX_SCALE: 0.4, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
             - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
@@ -49,27 +49,27 @@ OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: true
-    BATCH_SIZE_PER_GPU: 4
+    BATCH_SIZE_PER_GPU: &batchsize 6
     NUM_EPOCHS: 1000
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 1.0e-04
+        LR: &lr 0.0002
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 
     SCHEDULER:
         NAME: OneCycleLR
         MAX_LR: *lr
-        PCT_START: 0.01
+        PCT_START: 0.05
         ON_EPOCH: False
 
     CLIP_GRAD:
         TYPE: value
-        CLIP_VALUE: 0.1
+        CLIP_VALUE: 1.0
 
 EVALUATOR:
-    BATCH_SIZE_PER_GPU: 4
+    BATCH_SIZE_PER_GPU: *batchsize
     MAX_DISP: 192
     METRIC:
         - d1_all

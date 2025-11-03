@@ -138,6 +138,7 @@ class DistillationTrainer:
         self.cfgs.MODEL.valid_iters = 0
         self.cfgs.trainer_teacher = self.model_trainer_teacher
         self.model_trainer = build_trainer(self.args, self.cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
+        # self.show_model_param_status()
         self.tbar = tqdm.trange(self.model_trainer.last_epoch + 1, self.model_trainer.total_epochs,
                                desc='epochs', dynamic_ncols=True, disable=(self.local_rank != 0),
                                bar_format='{l_bar}{bar}{r_bar}\n')
@@ -148,6 +149,33 @@ class DistillationTrainer:
             self.model_trainer.save_ckpt(current_epoch)
             if current_epoch % self.cfgs.TRAINER.EVAL_INTERVAL == 0 or current_epoch == self.model_trainer.total_epochs - 1:
                 self.model_trainer.evaluate(current_epoch)
+
+    def list_frozen_unfrozen_params(self, model):
+        frozen_params = []
+        frozen_size = 0
+        unfrozen_params = []
+        unfrozen_size = 0
+        for name, param in model.named_parameters():
+            param_size = param.numel()
+            if not param.requires_grad:
+                frozen_params.append(name)
+                frozen_size += param_size
+            else:
+                unfrozen_params.append(name)
+                unfrozen_size += param_size
+        frozen_size_m = frozen_size / 1e6
+        unfrozen_size_m = unfrozen_size / 1e6
+        print(f"Frozen parameters: {len(frozen_params)} (total size: {frozen_size_m:.3f}M)")
+        print("Names:", frozen_params)
+        print(f"Unfrozen parameters: {len(unfrozen_params)} (total size: {unfrozen_size_m:.3f}M)")
+        print("Names:", unfrozen_params)
+        return
+
+    def show_model_param_status(self):
+        model = self.model_trainer.model.module if self.args.dist_mode else self.model_trainer.model
+       
+        self.list_frozen_unfrozen_params(model)
+       
 
 
 if __name__ == '__main__':
