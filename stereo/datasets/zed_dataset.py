@@ -34,12 +34,16 @@ class ZedDataset(DatasetTemplate):
             disp_img = np.zeros((left_img.shape[0], left_img.shape[1]), dtype=np.float32)
         else:
             disp_img = np.load(disp_img_path)
-
+        crop = 1000
+        left_img = left_img[:crop, :, :]
+        right_img = right_img[:crop, :, :]
+        disp_img = disp_img[:crop, :]
         sample = {
             'left': left_img,
             'right': right_img,
             'disp': disp_img,
         }
+        
         if self.return_right_disp:
             disp_img_right_path = disp_img_path.replace('c_0', 'c_1')
             disp_img_right = np.array(Image.open(disp_img_right_path), dtype=np.float32) / 256.0
