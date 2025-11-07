@@ -84,8 +84,9 @@ if __name__ == "__main__":
     torch.autograd.set_grad_enabled(False)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
+    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
     ckpt_dir = args.ckpt_dir
     cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
     if 'vit_size' not in cfg:
@@ -95,8 +96,8 @@ if __name__ == "__main__":
     args = OmegaConf.create(cfg)
     # logging.info(f"args:\n{args}")
     logging.info(f"Using pretrained model from {ckpt_dir}")
-    # args.vit_size = 'vits'
-    args.valid_iters = 16
+    args.vit_size = 'vits'
+    args.valid_iters = 0
     args.max_disp = 64
 
     model = FoundationStereo(args)
@@ -118,8 +119,8 @@ if __name__ == "__main__":
     code_dir = os.path.dirname(os.path.realpath(__file__))
     img0 = imageio.imread(args.left_file, pilmode="RGB")
     img1 = imageio.imread(args.right_file, pilmode="RGB")
-    # img0 = img0[:1000,...]
-    # img1 = img1[:1000,...]
+    img0 = img0[:1000,...]
+    img1 = img1[:1000,...]
     scale = args.scale
     assert scale <= 1, "scale must be <=1"
     img0 = cv2.resize(img0, fx=scale, fy=scale, dsize=None)

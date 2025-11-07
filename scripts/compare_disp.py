@@ -13,13 +13,26 @@ from PIL import Image
 # # Path to the original image
 # orig_img_path = '/media/levin/DATA/nerf/public_depth/kitti12/training/colored_0/000000_10.png'
 
+# # Paths to the disparity .npy files
+# file1 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006.npy'
+# file2 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp_test/00000006.npy'
+
+
+# # Path to the original image
+# orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/250610/left_images/00000006.png'
+
 # Paths to the disparity .npy files
-file1 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp/00000006.npy'
-file2 = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp_test/00000006.npy'
+# file1 = '/home/levin/workspace/temp/FoundationStereo/output/temp/disp_gt_0.npy'
+# file2 = '/home/levin/workspace/temp/FoundationStereo/output/temp/disp_teacher_pred_0.npy'
+# file2 = '/home/levin/workspace/temp/FoundationStereo/output/temp/disp_student_pred_0.npy'
+
+file1 = '/media/levin/DATA/nerf/new_es8/stereo/20250702/disp/1751438147.4760577679_test.npy'
+file2 = '/media/levin/DATA/nerf/new_es8/stereo/20250702/disp/1751438147.4760577679.npy'
+
 
 
 # Path to the original image
-orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/250610/left_images/00000006.png'
+orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/20250702/left_images/1751438147.4760577679.png'
 
 # Load the original image (as RGB)
 orig_img = cv2.imread(orig_img_path)
@@ -33,12 +46,17 @@ else:
 
 disp2 = np.load(file2)
 
-crop = 1000
-disp1[crop:, ...] = 0
-disp2[crop:, ...] = 0
-orig_img[crop:, ...] = 0
 
-mask = (disp1 > 1)
+# disp1 = disp1[12:-12,: ]
+# disp2 = disp2[12:-12,: ]
+# orig_img = orig_img[:1000,...]
+# crop = 1000
+# disp1[crop:, ...] = 0
+# disp2[crop:, ...] = 0
+# orig_img[crop:, ...] = 0
+
+# disp1[:800, ...] = 0
+mask = (disp1 >  0)
 
 
 
