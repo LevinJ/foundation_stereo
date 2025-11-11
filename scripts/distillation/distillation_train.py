@@ -135,8 +135,8 @@ class DistillationTrainer:
         #modify student cfgs
         self.cfgs.MODEL.PRETRAINED_MODEL = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
         self.cfgs.MODEL.vit_size = 'vits'
-        self.cfgs.MODEL.train_iters = 0
-        self.cfgs.MODEL.valid_iters = 0
+        self.cfgs.MODEL.train_iters = 4
+        self.cfgs.MODEL.valid_iters = 4
         self.cfgs.trainer_teacher = self.model_trainer_teacher
         self.model_trainer = build_trainer(self.args, self.cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
         # self.show_model_param_status()
@@ -145,46 +145,46 @@ class DistillationTrainer:
                                bar_format='{l_bar}{bar}{r_bar}\n')
         
         return
-    def check_initial_model(self):
-        local_rank = self.local_rank
+    # def check_initial_model(self):
+    #     local_rank = self.local_rank
 
-        # teacher_cfgs = copy.deepcopy(self.cfgs)
-        # teacher_args = copy.deepcopy(self.args)
-        # self.model_trainer_teacher = build_trainer(teacher_args, teacher_cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
-        # self.model_trainer_teacher.model = freeze_model(self.model_trainer_teacher.model)
-        # trainer = self.model_trainer_teacher
+    #     # teacher_cfgs = copy.deepcopy(self.cfgs)
+    #     # teacher_args = copy.deepcopy(self.args)
+    #     # self.model_trainer_teacher = build_trainer(teacher_args, teacher_cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
+    #     # self.model_trainer_teacher.model = freeze_model(self.model_trainer_teacher.model)
+    #     # trainer = self.model_trainer_teacher
 
-        self.cfgs.MODEL.PRETRAINED_MODEL = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
-        self.cfgs.MODEL.vit_size = 'vits'
-        self.cfgs.MODEL.train_iters = 0
-        self.cfgs.MODEL.valid_iters = 0
-        self.model_trainer = build_trainer(self.args, self.cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
-        trainer = self.model_trainer
+    #     self.cfgs.MODEL.PRETRAINED_MODEL = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    #     self.cfgs.MODEL.vit_size = 'vits'
+    #     self.cfgs.MODEL.train_iters = 0
+    #     self.cfgs.MODEL.valid_iters = 0
+    #     self.model_trainer = build_trainer(self.args, self.cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
+    #     trainer = self.model_trainer
 
-        trainer.model.eval()
-        import numpy as np
-        output_dir = './output/temp'
-        os.makedirs(output_dir, exist_ok=True)
-        for i, data in enumerate(trainer.eval_loader):
-            for k, v in data.items():
-                data[k] = v.to(local_rank) if torch.is_tensor(v) else v
+    #     trainer.model.eval()
+    #     import numpy as np
+    #     output_dir = './output/temp'
+    #     os.makedirs(output_dir, exist_ok=True)
+    #     for i, data in enumerate(trainer.eval_loader):
+    #         for k, v in data.items():
+    #             data[k] = v.to(local_rank) if torch.is_tensor(v) else v
 
-            with torch.no_grad():
-                with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
-                    student_pred = trainer.model(data)
+    #         with torch.no_grad():
+    #             with torch.cuda.amp.autocast(enabled=self.cfgs.OPTIMIZATION.AMP):
+    #                 student_pred = trainer.model(data)
 
-            disp_pred = student_pred['disp_pred']
-            disp_gt = data["disp"]
+    #         disp_pred = student_pred['disp_pred']
+    #         disp_gt = data["disp"]
 
-            # Save the disparity predictions and ground truth as squeezed numpy arrays
-            disp_pred_np = disp_pred.detach().cpu().numpy().squeeze()
-            disp_gt_np = disp_gt.detach().cpu().numpy().squeeze()
-            np.save(os.path.join(output_dir, f'disp_pred_{i}.npy'), disp_pred_np)
-            np.save(os.path.join(output_dir, f'disp_gt_{i}.npy'), disp_gt_np)
-            # Only save the first batch for demonstration, remove break to save all
-            break
+    #         # Save the disparity predictions and ground truth as squeezed numpy arrays
+    #         disp_pred_np = disp_pred.detach().cpu().numpy().squeeze()
+    #         disp_gt_np = disp_gt.detach().cpu().numpy().squeeze()
+    #         np.save(os.path.join(output_dir, f'disp_pred_{i}.npy'), disp_pred_np)
+    #         np.save(os.path.join(output_dir, f'disp_gt_{i}.npy'), disp_gt_np)
+    #         # Only save the first batch for demonstration, remove break to save all
+    #         break
 
-        return
+    #     return
 
     def run(self):
         for current_epoch in self.tbar:
