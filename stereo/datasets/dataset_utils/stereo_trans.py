@@ -122,6 +122,26 @@ class RandomScale(object):
 
         return sample
 
+class Scale(object):
+    def __init__(self, config):
+        self.config = config
+        self.scale = config.SCALE
+       
+
+    def __call__(self, sample):
+        scale_x = self.scale
+        scale_y = self.scale
+        
+        for k in sample.keys():
+            if k in ['left', 'right']:
+                sample[k] = cv2.resize(sample[k], None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+
+            elif k in ['disp', 'disp_right']:
+                sample[k] = cv2.resize(sample[k], None, fx=scale_x, fy=scale_y, interpolation=cv2.INTER_LINEAR)
+                sample[k] = sample[k] * scale_x
+
+        return sample
+
 
 class RandomSparseScale(object):
     def __init__(self, config):

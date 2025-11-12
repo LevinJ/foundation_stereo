@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 
 
-    args.intrinsic_file = "/media/levin/DATA/nerf/new_es8/stereo_20250331/K_Zed.txt"
+    # args.intrinsic_file = "/media/levin/DATA/nerf/new_es8/stereo_20250331/K_Zed.txt"
 
     args.z_far = 80
     args.remove_invisible = True
@@ -89,8 +89,10 @@ if __name__ == "__main__":
     # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
+    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_999.pth'
     ckpt_dir = args.ckpt_dir
-    cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
+    cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/cfg.yaml'
+    cfg = OmegaConf.load(cfg_file)
     if 'vit_size' not in cfg:
         cfg['vit_size'] = 'vitl'
     for k in args.__dict__:
@@ -98,9 +100,9 @@ if __name__ == "__main__":
     args = OmegaConf.create(cfg)
     # logging.info(f"args:\n{args}")
     logging.info(f"Using pretrained model from {ckpt_dir}")
-    # args.vit_size = 'vits'
-    # args.valid_iters = 4
-    # args.max_disp = 64
+    args.vit_size = 'vits'
+    args.valid_iters = 4
+    args.max_disp = 64
 
     model = FoundationStereo(args)
 
@@ -122,7 +124,7 @@ if __name__ == "__main__":
 
     left_img_path = args.left_file
     right_img_path = args.right_file
-    zp = ZedPreprocessor(scale=0.75)
+    zp = ZedPreprocessor(scale=0.25)
     img0, img0_ori = zp.prepare(left_img_path)
     img1, img1_ori = zp.prepare(right_img_path)
     H, W = img0.shape[2], img0.shape[3]

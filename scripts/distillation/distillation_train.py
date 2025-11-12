@@ -126,18 +126,18 @@ class DistillationTrainer:
             os.system('cp %s %s' % (self.args.cfg_file, self.args.output_dir))
 
     def _setup_trainer(self):
-        teacher_cfgs = copy.deepcopy(self.cfgs)
-        teacher_args = copy.deepcopy(self.args)
-        teacher_args.run_mode = 'train_teacher'
-        self.model_trainer_teacher = build_trainer(teacher_args, teacher_cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
-        self.model_trainer_teacher.model = freeze_model(self.model_trainer_teacher.model)
+        # teacher_cfgs = copy.deepcopy(self.cfgs)
+        # teacher_args = copy.deepcopy(self.args)
+        # teacher_args.run_mode = 'train_teacher'
+        # self.model_trainer_teacher = build_trainer(teacher_args, teacher_cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
+        # self.model_trainer_teacher.model = freeze_model(self.model_trainer_teacher.model)
 
         #modify student cfgs
         self.cfgs.MODEL.PRETRAINED_MODEL = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
         self.cfgs.MODEL.vit_size = 'vits'
         self.cfgs.MODEL.train_iters = 4
         self.cfgs.MODEL.valid_iters = 4
-        self.cfgs.trainer_teacher = self.model_trainer_teacher
+        # self.cfgs.trainer_teacher = self.model_trainer_teacher
         self.model_trainer = build_trainer(self.args, self.cfgs, self.local_rank, self.global_rank, self.logger, self.tb_writer)
         # self.show_model_param_status()
         self.tbar = tqdm.trange(self.model_trainer.last_epoch + 1, self.model_trainer.total_epochs,

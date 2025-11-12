@@ -1,4 +1,5 @@
 import os
+from turtle import left
 import torch.utils.data as torch_data
 import numpy as np
 from PIL import Image
@@ -15,6 +16,12 @@ class ZedDataset(DatasetTemplate):
             self.retrun_pos = self.data_info.RETURN_POS
         else:
             self.retrun_pos = False
+    def crop_image(self, img):
+        crop_start_height = 556
+        crop_end_height = 940
+        crop_start_width = 126
+        crop_end_width = 1406
+        return img[crop_start_height:crop_end_height, crop_start_width:crop_end_width]
 
     def __getitem__(self, idx):
         item = self.data_list[idx]
@@ -34,10 +41,13 @@ class ZedDataset(DatasetTemplate):
             disp_img = np.zeros((left_img.shape[0], left_img.shape[1]), dtype=np.float32)
         else:
             disp_img = np.load(disp_img_path)
-        crop = 1000
-        left_img = left_img[:crop, :, :]
-        right_img = right_img[:crop, :, :]
-        disp_img = disp_img[:crop, :]
+        # crop = 1000
+        # left_img = left_img[:crop, :, :]
+        # right_img = right_img[:crop, :, :]
+        # disp_img = disp_img[:crop, :]
+        left_img = self.crop_image(left_img)
+        right_img = self.crop_image(right_img)
+        disp_img = self.crop_image(disp_img)
         sample = {
             'left': left_img,
             'right': right_img,

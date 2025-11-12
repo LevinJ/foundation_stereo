@@ -2,9 +2,9 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: ZedDataset
             DATA_SPLIT: {
-                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_anno_64.txt,
-                EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
-                TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt
+                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt,
+                EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt,
+                TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt
             }
             RETURN_RIGHT_DISP: false
 
@@ -15,18 +15,20 @@ DATA_CONFIG:
             # - { NAME: StereoColorJitter, BRIGHTNESS: [ 0.6, 1.4 ], CONTRAST: [ 0.6, 1.4 ], SATURATION: [ 0.6, 1.4 ], HUE: 0.5, ASYMMETRIC_PROB: 0.2 }
             # - { NAME: RandomErase, PROB: 0.5, MAX_TIME: 2, BOUNDS: [ 50, 100 ] }
             # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -0.2, MAX_SCALE: 0.4, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
-            - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
+            # - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
+            - { NAME: Scale, SCALE: 0.25}
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
             - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
         EVALUATING:
             # - { NAME: RightTopPad, SIZE: [ 544, 960 ] }
-            - { NAME: RandomCrop, SIZE: [ 384, 768 ], Y_JITTER: false }
+            # - { NAME: RandomCrop, SIZE: [ 384, 768 ], Y_JITTER: false }
             # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -1, MAX_SCALE: -1., SCALE_PROB: 1, STRETCH_PROB: 0 }
             # - { NAME: RandomCrop, SIZE: [ 1000, 1500 ], Y_JITTER: false }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
             # - { NAME: RandomCrop, SIZE: [ 544, 960 ], Y_JITTER: false }
+            - { NAME: Scale, SCALE: 0.25}
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
             - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
@@ -37,7 +39,7 @@ MODEL:
     corr_radius: 4
     hidden_dims: [ 128, 128, 128 ]
     low_memory: 0
-    max_disp: 416
+    max_disp: 64
     mixed_precision: true
     n_downsample: 2
     n_gru_layers: 3
@@ -52,12 +54,12 @@ OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: true
-    BATCH_SIZE_PER_GPU: &batchsize 4
+    BATCH_SIZE_PER_GPU: &batchsize 1
     NUM_EPOCHS: 1000
 
     OPTIMIZER:
         NAME: AdamW
-        LR: &lr 1.0e-05
+        LR: &lr 1.0e-04
         WEIGHT_DECAY: 1.0e-05
         EPS: 1.0e-08
 
@@ -73,7 +75,7 @@ OPTIMIZATION:
 
 EVALUATOR:
     BATCH_SIZE_PER_GPU: *batchsize
-    MAX_DISP: 192
+    MAX_DISP: 64
     METRIC:
         - d1_all
         - epe
