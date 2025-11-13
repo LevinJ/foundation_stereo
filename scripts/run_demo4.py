@@ -69,6 +69,7 @@ if __name__ == "__main__":
 
     folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
     file_name = '1751438147.4760577679.png'
+    # file_name ='1751438145.9038047791.png'
     args.left_file = f"{folder}/left_images/{file_name}"
     args.right_file = f"{folder}/right_images/{file_name}"
 
@@ -86,11 +87,13 @@ if __name__ == "__main__":
     torch.autograd.set_grad_enabled(False)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
-    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_999.pth'
+    # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_999.pth'
+    # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug_scale_0.25_8000/checkpoint_epoch_999.pth'
     ckpt_dir = args.ckpt_dir
+    # cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/23-51-11/cfg.yaml'
     cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/cfg.yaml'
     cfg = OmegaConf.load(cfg_file)
     if 'vit_size' not in cfg:
@@ -124,7 +127,7 @@ if __name__ == "__main__":
 
     left_img_path = args.left_file
     right_img_path = args.right_file
-    zp = ZedPreprocessor(scale=0.25)
+    zp = ZedPreprocessor(scale=0.5)
     img0, img0_ori = zp.prepare(left_img_path)
     img1, img1_ori = zp.prepare(right_img_path)
     H, W = img0.shape[2], img0.shape[3]
@@ -155,8 +158,8 @@ if __name__ == "__main__":
     # imageio.imwrite(f'{args.out_dir}/vis_orgin.png', vis)
     # logging.info(f"Output saved to {args.out_dir}")
 
-    imageio.imwrite(f'{args.out_dir}/rbg.png', img0_ori)
-    logging.info(f"Output saved to {args.out_dir}")
+    # imageio.imwrite(f'{args.out_dir}/rbg.png', img0_ori)
+    # logging.info(f"Output saved to {args.out_dir}")
 
     if args.remove_invisible:
         yy, xx = np.meshgrid(np.arange(disp.shape[0]), np.arange(
@@ -164,10 +167,10 @@ if __name__ == "__main__":
         us_right = xx-disp
         invalid = (us_right < 0) | (disp <= 0)
         disp[invalid] = 0
-        disp_dir = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp_test'
-        os.makedirs(disp_dir, exist_ok=True)
-        np.save(f'{disp_dir}/{file_name[:-4]}.npy', disp)
-        logging.info(f"Disparity map saved to {disp_dir}/{file_name[:-4]}.npy")
+        # disp_dir = '/media/levin/DATA/nerf/new_es8/stereo/250610/disp_test'
+        # os.makedirs(disp_dir, exist_ok=True)
+        # np.save(f'{disp_dir}/{file_name[:-4]}.npy', disp)
+        # logging.info(f"Disparity map saved to {disp_dir}/{file_name[:-4]}.npy")
 
     if args.get_pc:
         K = zp.updated_K().copy()
@@ -176,19 +179,22 @@ if __name__ == "__main__":
         # np.save(f'{args.out_dir}/depth_meter.npy', depth)
         import matplotlib.pyplot as plt
 
-        # Display the RGB image and depth image side by side
-        plt.figure(figsize=(12, 6))
+        # Display the RGB, disparity, and depth images side by side
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
-        plt.subplot(1, 2, 1)
-        plt.title("RGB Image")
-        plt.imshow(img0_ori)
-        plt.axis("off")
+        axes[0].set_title("RGB Image")
+        axes[0].imshow(img0_ori)
+        axes[0].axis("off")
 
-        plt.subplot(1, 2, 2)
-        plt.title("Depth Image")
-        plt.imshow(depth)
-        plt.colorbar(label="Depth (meters)")
-        plt.axis("off")
+        im1 = axes[1].imshow(disp, cmap='plasma')
+        axes[1].set_title("Disparity Image")
+        axes[1].axis("off")
+        fig.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04, label="Disparity (pixels)")
+
+        im2 = axes[2].imshow(depth)
+        axes[2].set_title("Depth Image")
+        axes[2].axis("off")
+        fig.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04, label="Depth (meters)")
 
         plt.tight_layout()
         # plt.savefig(f'{args.out_dir}/rgb_and_depth.png')

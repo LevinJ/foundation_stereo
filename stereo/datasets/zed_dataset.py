@@ -1,5 +1,4 @@
 import os
-from turtle import left
 import torch.utils.data as torch_data
 import numpy as np
 from PIL import Image

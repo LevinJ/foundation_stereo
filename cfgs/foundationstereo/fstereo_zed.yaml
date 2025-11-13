@@ -2,9 +2,9 @@ DATA_CONFIG:
     DATA_INFOS:
         -   DATASET: ZedDataset
             DATA_SPLIT: {
-                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt,
-                EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt,
-                TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno_1.txt
+                TRAINING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_anno.txt,
+                EVALUATING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt,
+                TESTING: /media/levin/DATA/nerf/new_es8/stereo/20250702/picked_images_eval_anno.txt
             }
             RETURN_RIGHT_DISP: false
 
@@ -54,7 +54,7 @@ OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: true
-    BATCH_SIZE_PER_GPU: &batchsize 1
+    BATCH_SIZE_PER_GPU: &batchsize 64
     NUM_EPOCHS: 1000
 
     OPTIMIZER:
@@ -85,7 +85,7 @@ EVALUATOR:
 
 TRAINER:
     EVAL_INTERVAL: 10
-    CKPT_SAVE_INTERVAL: 1000
+    CKPT_SAVE_INTERVAL: 10
     MAX_CKPT_SAVE_NUM: 2
     LOGGER_ITER_INTERVAL: 10
     TRAIN_VISUALIZATION: True

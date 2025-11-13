@@ -6,6 +6,7 @@
 ******************************************* -->
 
 """
+import dis
 import cv2
 
 
@@ -62,16 +63,21 @@ class App(object):
     def run(self):
         z_far = 100.0
         out_dir = './output'
-        scale = 1.0
-        intrinsic_file = "/media/levin/DATA/nerf/new_es8/stereo_20250331/K_Zed.txt"
+        # scale = 1.0
+        # intrinsic_file = "/media/levin/DATA/nerf/new_es8/stereo_20250331/K_Zed.txt"
         # file1 = '/home/levin/workspace/temp/FoundationStereo/output/temp/disp_student_pred_0.npy'
         # file1 = '/home/levin/workspace/temp/FoundationStereo/output/temp/disp_gt_0.npy'
         # orig_img_path = '/media/levin/DATA/nerf/new_es8/stereo/20250702/left_images/1751438147.4760577679.png'
-        file1 = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/disp.npy'
-        orig_img_path = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/rbg.png'
+        # file1 = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/disp.npy'
+        # orig_img_path = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/rbg.png'
+
+        # file_name = '1751438147.4760577679'
+        file_name ='1751438145.9038047791'
+        file1 = f'/media/levin/DATA/nerf/new_es8/stereo/20250702/disp/{file_name}.npy'
+        orig_img_path = f'/media/levin/DATA/nerf/new_es8/stereo/20250702/left_images/{file_name}.png'
         # Load the original image (as RGB)
-        orig_img = cv2.imread(orig_img_path)
-        orig_img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2RGB)
+        # orig_img = cv2.imread(orig_img_path)
+        # orig_img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2RGB)
 
         # Resize the original image by a given scale
         # orig_img = self.resize_image(orig_img, 3)
@@ -81,20 +87,34 @@ class App(object):
             disp = np.load(file1)
         else:
             disp = np.array(Image.open(file1), dtype=np.float32) / 256.0
-        disp = self.resize_disparity(disp, 1/3)
-        # disp = disp[12:-12,: ]
-        # orig_img = orig_img[:1000,...]
-
-        # with open(intrinsic_file, 'r') as f:
-        #     lines = f.readlines()
-        #     K = np.array(list(map(float, lines[0].rstrip().split()))).astype(
-        #         np.float32).reshape(3, 3)
-        #     baseline = float(lines[1])
-        # K[:2] *= scale
-        zp = ZedPreprocessor(scale=0.25)
+        # disp = self.resize_disparity(disp, 1/3)
+        zp = ZedPreprocessor(scale=0.5)
+        disp = zp.prepare_disp(disp)
+        _, orig_img= zp.prepare(orig_img_path)
         K = zp.updated_K().copy()
         baseline = zp.get_baseline()
         depth = K[0, 0]*baseline/disp
+
+        # Display the RGB, disparity, and depth images side by side
+        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+        axes[0].set_title("RGB Image")
+        axes[0].imshow(orig_img)
+        axes[0].axis("off")
+
+        im1 = axes[1].imshow(disp, cmap='plasma')
+        axes[1].set_title("Disparity Image")
+        axes[1].axis("off")
+        fig.colorbar(im1, ax=axes[1], fraction=0.046, pad=0.04, label="Disparity (pixels)")
+
+        im2 = axes[2].imshow(depth)
+        axes[2].set_title("Depth Image")
+        axes[2].axis("off")
+        fig.colorbar(im2, ax=axes[2], fraction=0.046, pad=0.04, label="Depth (meters)")
+
+        plt.tight_layout()
+        # plt.savefig(f'{out_dir}/rgb_disp_depth.png')
+        plt.show()
 
 
         process_and_visualize_point_cloud(

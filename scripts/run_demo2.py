@@ -66,7 +66,8 @@ if __name__ == "__main__":
     # args.right_file = f"{folder}/colored_r/{file_name}"
 
     folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
-    file_name = '1751438147.4760577679.png'
+    # file_name = '1751438147.4760577679.png'
+    file_name ='1751438145.9038047791.png'
     args.left_file = f"{folder}/left_images/{file_name}"
     args.right_file = f"{folder}/right_images/{file_name}"
 
@@ -86,7 +87,7 @@ if __name__ == "__main__":
 
     # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
-    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
+    # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
     ckpt_dir = args.ckpt_dir
     cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
     if 'vit_size' not in cfg:
@@ -96,9 +97,9 @@ if __name__ == "__main__":
     args = OmegaConf.create(cfg)
     # logging.info(f"args:\n{args}")
     logging.info(f"Using pretrained model from {ckpt_dir}")
-    args.vit_size = 'vits'
-    args.valid_iters = 0
-    args.max_disp = 64
+    # args.vit_size = 'vits'
+    # args.valid_iters = 0
+    # args.max_disp = 64
 
     model = FoundationStereo(args)
 

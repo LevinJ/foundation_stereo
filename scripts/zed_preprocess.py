@@ -33,6 +33,19 @@ class ZedPreprocessor(object):
         # Convert to tensor and reshape as in preprocess
         tensor_image = torch.as_tensor(resized_image.copy()).float()[None].permute(0, 3, 1, 2).contiguous()
         return tensor_image, resized_image
+    def prepare_disp(self, disp):
+        # Crop disparity using constructor attributes
+        cropped_disp = disp[
+            self.crop_start_height:self.crop_end_height,
+            self.crop_start_width:self.crop_end_width
+        ]
+        # Resize disparity using img_scale
+        new_height = int(cropped_disp.shape[0] * self.img_scale)
+        new_width = int(cropped_disp.shape[1] * self.img_scale)
+        resized_disp = cv2.resize(cropped_disp, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+        # Multiply disparity values by scale factor
+        resized_disp = resized_disp * self.img_scale
+        return resized_disp
     def updated_K(self):
         # Compute crop offsets
         crop_h0 = self.crop_start_height
