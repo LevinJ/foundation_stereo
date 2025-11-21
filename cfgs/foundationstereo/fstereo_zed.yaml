@@ -17,7 +17,7 @@ DATA_CONFIG:
             # - { NAME: RandomScale, SIZE: [ 320, 736 ], MIN_SCALE: -0.2, MAX_SCALE: 0.4, SCALE_PROB: 0.8, STRETCH_PROB: 0.8 }
             # - { NAME: RandomCrop, SIZE: [ 320, 736 ], Y_JITTER: false }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
-            - { NAME: Scale, SCALE: 0.25}
+            - { NAME: Scale, SCALE: 0.5}
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
             - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
@@ -28,7 +28,7 @@ DATA_CONFIG:
             # - { NAME: RandomCrop, SIZE: [ 1000, 1500 ], Y_JITTER: false }
             # - { NAME: DivisiblePad, BY: 32, MODE: 'round' }
             # - { NAME: RandomCrop, SIZE: [ 544, 960 ], Y_JITTER: false }
-            - { NAME: Scale, SCALE: 0.25}
+            - { NAME: Scale, SCALE: 0.5}
             - { NAME: TransposeImage }
             - { NAME: ToTensor }
             - { NAME: NormalizeImage, MEAN: [ 0.485, 0.456, 0.406 ], STD: [ 0.229, 0.224, 0.225 ] }
@@ -54,7 +54,7 @@ OPTIMIZATION:
     FREEZE_BN: false
     SYNC_BN: true
     AMP: true
-    BATCH_SIZE_PER_GPU: &batchsize 64
+    BATCH_SIZE_PER_GPU: &batchsize 16
     NUM_EPOCHS: 1000
 
     OPTIMIZER:
@@ -85,7 +85,7 @@ EVALUATOR:
 
 TRAINER:
     EVAL_INTERVAL: 10
-    CKPT_SAVE_INTERVAL: 10
+    CKPT_SAVE_INTERVAL: 500
     MAX_CKPT_SAVE_NUM: 2
     LOGGER_ITER_INTERVAL: 10
     TRAIN_VISUALIZATION: True

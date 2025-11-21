@@ -71,10 +71,17 @@ class App(object):
         # file1 = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/disp.npy'
         # orig_img_path = '/home/levin/workspace/temp/FoundationStereo/scripts/temp/rescale/rbg.png'
 
-        # file_name = '1751438147.4760577679'
-        file_name ='1751438145.9038047791'
+        file_name = '1751438147.4760577679'
+        # file_name ='1751438145.9038047791'
+        # file_name = '1751438168.9847328663'
+        # file_name ='1751438153.062338829'
         file1 = f'/media/levin/DATA/nerf/new_es8/stereo/20250702/disp/{file_name}.npy'
         orig_img_path = f'/media/levin/DATA/nerf/new_es8/stereo/20250702/left_images/{file_name}.png'
+
+
+        # file_name ='00000006'
+        # file1 = f'/media/levin/DATA/nerf/new_es8/stereo/250610/disp/{file_name}.npy'
+        # orig_img_path = f'/media/levin/DATA/nerf/new_es8/stereo/250610/colored_l/{file_name}.png'
         # Load the original image (as RGB)
         # orig_img = cv2.imread(orig_img_path)
         # orig_img = cv2.cvtColor(orig_img, cv2.COLOR_BGR2RGB)

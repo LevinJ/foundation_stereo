@@ -61,15 +61,19 @@ if __name__ == "__main__":
     # file_name = '00000006.png'
 
     # # big hole
-    # # folder = '/media/levin/DATA/nerf/new_es8/stereo_20250331/20250331/lidar'
-    # # file_name = '00000062.png'
+    # folder = '/media/levin/DATA/nerf/new_es8/stereo_20250331/20250331/lidar'
+    # file_name = '00000062.png'
 
     # args.left_file = f"{folder}/colored_l/{file_name}"
     # args.right_file = f"{folder}/colored_r/{file_name}"
 
     folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
-    file_name = '1751438147.4760577679.png'
-    # file_name ='1751438145.9038047791.png'
+    #eval
+    # file_name = '1751438147.4760577679.png'
+    # file_name = '1751438168.9847328663.png'
+    #train
+    file_name ='1751438145.9038047791.png'
+    # file_name ='1751438153.062338829.png'
     args.left_file = f"{folder}/left_images/{file_name}"
     args.right_file = f"{folder}/right_images/{file_name}"
 
@@ -87,11 +91,12 @@ if __name__ == "__main__":
     torch.autograd.set_grad_enabled(False)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
+    # args.ckpt_dir = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/model_best_bp2.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_20.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug5/ckpt/checkpoint_epoch_999.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug/ckpt/checkpoint_epoch_999.pth'
     # args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug_scale_0.25_8000/checkpoint_epoch_999.pth'
+    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug_0.5/checkpoint_epoch_500.pth'
     ckpt_dir = args.ckpt_dir
     # cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/23-51-11/cfg.yaml'
     cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/cfg.yaml'

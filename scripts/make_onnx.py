@@ -1,6 +1,7 @@
 import warnings, argparse, logging, os, sys
 code_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(f'{code_dir}/../')
+os.environ["XFORMERS_DISABLED"] = "1"
 import omegaconf, yaml, torch,pdb
 from omegaconf import OmegaConf
 from core.foundation_stereo import FoundationStereo
@@ -34,12 +35,20 @@ if __name__ == '__main__':
     # logging.info(f'Input image size: {args.height}x{args.width}')
 
     # args.valid_iters = 6
-    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
 
+    args.height = 192
+    args.width = 640
+    args.valid_iters = 4
+    args.save_path = f'{code_dir}/../output/foundation_small_{args.height}_{args.width}_disp64_{args.valid_iters}.onnx'
+    args.ckpt_dir = '/home/levin/workspace/temp/FoundationStereo/output/ZedDataset/FoundationStereo/fstereo_zed/debug_0.5/checkpoint_epoch_500.pth'
+    
+    # cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/23-51-11/cfg.yaml'
+    cfg_file = '/media/levin/DATA/checkpoints/foundationstereo/11-33-40/cfg.yaml'
+    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
     torch.autograd.set_grad_enabled(False)
 
     ckpt_dir = args.ckpt_dir
-    cfg = OmegaConf.load(f'{os.path.dirname(ckpt_dir)}/cfg.yaml')
+    cfg = OmegaConf.load(cfg_file)
     for k in args.__dict__:
       cfg[k] = args.__dict__[k]
     if 'vit_size' not in cfg:
@@ -49,8 +58,15 @@ if __name__ == '__main__':
     logging.info(f"Using pretrained model from {ckpt_dir}")
     model = FoundationStereoOnnx(cfg)
     ckpt = torch.load(ckpt_dir, weights_only=False)
-    logging.info(f"ckpt global_step:{ckpt['global_step']}, epoch:{ckpt['epoch']}")
-    model.load_state_dict(ckpt['model'])
+    global_step = ckpt.get('global_step', 'N/A')
+    logging.info(
+        f"ckpt global_step:{global_step}, epoch:{ckpt['epoch']}")
+    model_state = None
+    if 'model' in ckpt:
+        model_state = ckpt['model']
+    else:
+        model_state = ckpt['model_state']
+    model.load_state_dict(model_state)
     model.cuda()
     model.eval()
 
