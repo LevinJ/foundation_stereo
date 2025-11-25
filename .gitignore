@@ -8,3 +8,4 @@ DATA/*
 pretrained_models
 data/
 temp/
+output/
