@@ -16,8 +16,8 @@ class ZedDataset(DatasetTemplate):
         else:
             self.retrun_pos = False
     def crop_image(self, img):
-        crop_start_height = 556
-        crop_end_height = 940
+        crop_start_height = 556 + 60
+        crop_end_height = 940 + 60
         crop_start_width = 126
         crop_end_width = 1406
         return img[crop_start_height:crop_end_height, crop_start_width:crop_end_width]

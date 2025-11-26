@@ -158,16 +158,19 @@ class InferFS(object):
         return
 if __name__ == "__main__":
     obj = InferFS()
-    folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
+    # folder = '/media/levin/DATA/nerf/new_es8/stereo/20250702'
+    folder = '/media/levin/DATA/nerf/new_es8/stereo/20251119/8'
     #eval
     # file_name = '1751438147.4760577679.png'
     # file_name = '1751438168.9847328663.png'
     #train
-    file_name ='1751438145.9038047791.png'
+    # file_name ='1751438145.9038047791.png'
     # file_name ='1751438153.062338829.png'
+
+    file_name = '1763538671.3129007816.png'
     left_file = f"{folder}/left_images/{file_name}"
     right_file = f"{folder}/right_images/{file_name}"
 
-    zp = ZedPreprocessor(scale=0.5, only_road= True)
+    zp = ZedPreprocessor(scale=0.5, only_road= False)
     disp = obj.run_inference(left_file, right_file, zp=zp)
     obj.vis_cloud(disp)
