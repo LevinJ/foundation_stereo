@@ -189,11 +189,17 @@ class GenAnnoPicking:
         # eval = True
 
         tasks = []
-        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/8', False))
-        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/7', True))
-        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/7', False))
-        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/6', True))
-        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/6', False))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/1', True))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/1', False))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/2', True))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/2', False))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/3', True))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/3', False))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/4', True))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/4', False))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/5', True))
+        tasks.append(('/media/levin/DATA/nerf/new_es8/stereo/20251119/5', False))
+        
 
         model= self.setup_model_and_environment()
         for img_folder, eval in tasks:

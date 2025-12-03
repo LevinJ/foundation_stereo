@@ -193,8 +193,8 @@ def color_map_tensorboard(disp_gt, pred, disp_max=192, mask = None):
     disp_gt = np.clip(disp_gt, a_min=0, a_max=disp_max)
     pred = np.clip(pred, a_min=0, a_max=disp_max)
 
-    gt_tmp = 255.0 * disp_gt / disp_max
-    pred_tmp = 255.0 * pred / disp_max
+    gt_tmp = 255.0 * disp_gt / np.max(disp_gt)
+    pred_tmp = 255.0 * pred / np.max(pred)
     error_map_tmp = 255.0 * error_map / np.max(error_map)
 
     gt_tmp = cm(gt_tmp.astype('uint8'))
