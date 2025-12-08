@@ -2,8 +2,8 @@
 # @Author  : zhangchenming
 DATA_PATH_DICT = {
     'SceneFlowDataset': '/media/levin/DATA/nerf/public_depth/SceneFlow',
-    # 'ZedDataset': '/media/levin/DATA/nerf/new_es8/stereo',
-    'ZedDataset': '/media/levin/DATA/nerf/new_es8/stereo/20250702/',
+    'ZedDataset': '/media/levin/DATA/nerf/new_es8/stereo',
+    # 'ZedDataset': '/media/levin/DATA/nerf/new_es8/stereo/20250702/',
     'FlyingThings3DSubsetDataset': '/mnt/nas/algorithm/chenming.zhang/dataset/SceneFlow',
     'KittiDataset12': '/media/levin/DATA/nerf/public_depth/kitti12',
     'KittiDataset15': '/file_system/vepfs/public_data/stereo/kitti15',

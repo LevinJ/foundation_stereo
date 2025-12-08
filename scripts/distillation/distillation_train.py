@@ -198,8 +198,14 @@ class DistillationTrainer:
         frozen_size = 0
         unfrozen_params = []
         unfrozen_size = 0
+        gru_params = []
+        gru_size = 0
+        gru_prefixes = ["cnet.", "update_block.", "sam.", "cam.", "stem_2.", "spx_2_gru.", "spx_gru."]
         for name, param in model.named_parameters():
             param_size = param.numel()
+            if any(name.startswith(prefix) for prefix in gru_prefixes):
+                gru_params.append(name)
+                gru_size += param_size
             if not param.requires_grad:
                 frozen_params.append(name)
                 frozen_size += param_size
@@ -208,10 +214,13 @@ class DistillationTrainer:
                 unfrozen_size += param_size
         frozen_size_m = frozen_size / 1e6
         unfrozen_size_m = unfrozen_size / 1e6
+        gru_size_m = gru_size / 1e6
         print(f"Frozen parameters: {len(frozen_params)} (total size: {frozen_size_m:.3f}M)")
         print("Names:", frozen_params)
         print(f"Unfrozen parameters: {len(unfrozen_params)} (total size: {unfrozen_size_m:.3f}M)")
         print("Names:", unfrozen_params)
+        print(f"GRU parameters: {len(gru_params)} (total size: {gru_size_m:.3f}M)")
+        print("Names:", gru_params)
         return
 
     def show_model_param_status(self):
